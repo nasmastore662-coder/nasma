@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="ar" dir="rtl">
 <head>
   <meta charset="UTF-8">
@@ -394,7 +394,66 @@
         <!-- المنتجات -->
         <div>
           <div class="products-grid" id="products-grid">
-            <!-- تُبنى ديناميكياً -->
+            <article class="product-card skeleton-card">
+              <div class="product-image-wrapper">
+                <div class="skeleton-image"></div>
+              </div>
+              <div class="product-info skeleton-info">
+                <div class="skeleton-text skeleton-title"></div>
+                <div class="skeleton-text skeleton-rating"></div>
+                <div class="skeleton-text skeleton-price"></div>
+              </div>
+            </article>
+            <article class="product-card skeleton-card">
+              <div class="product-image-wrapper">
+                <div class="skeleton-image"></div>
+              </div>
+              <div class="product-info skeleton-info">
+                <div class="skeleton-text skeleton-title"></div>
+                <div class="skeleton-text skeleton-rating"></div>
+                <div class="skeleton-text skeleton-price"></div>
+              </div>
+            </article>
+            <article class="product-card skeleton-card">
+              <div class="product-image-wrapper">
+                <div class="skeleton-image"></div>
+              </div>
+              <div class="product-info skeleton-info">
+                <div class="skeleton-text skeleton-title"></div>
+                <div class="skeleton-text skeleton-rating"></div>
+                <div class="skeleton-text skeleton-price"></div>
+              </div>
+            </article>
+            <article class="product-card skeleton-card">
+              <div class="product-image-wrapper">
+                <div class="skeleton-image"></div>
+              </div>
+              <div class="product-info skeleton-info">
+                <div class="skeleton-text skeleton-title"></div>
+                <div class="skeleton-text skeleton-rating"></div>
+                <div class="skeleton-text skeleton-price"></div>
+              </div>
+            </article>
+            <article class="product-card skeleton-card">
+              <div class="product-image-wrapper">
+                <div class="skeleton-image"></div>
+              </div>
+              <div class="product-info skeleton-info">
+                <div class="skeleton-text skeleton-title"></div>
+                <div class="skeleton-text skeleton-rating"></div>
+                <div class="skeleton-text skeleton-price"></div>
+              </div>
+            </article>
+            <article class="product-card skeleton-card">
+              <div class="product-image-wrapper">
+                <div class="skeleton-image"></div>
+              </div>
+              <div class="product-info skeleton-info">
+                <div class="skeleton-text skeleton-title"></div>
+                <div class="skeleton-text skeleton-rating"></div>
+                <div class="skeleton-text skeleton-price"></div>
+              </div>
+            </article>
           </div>
           <!-- Pagination -->
           <div class="pagination" id="pagination"></div>
@@ -759,6 +818,16 @@ function bindMobileFilterEvents() {
   document.getElementById('mobile-apply-btn')?.addEventListener('click', closePanel);
   document.getElementById('mobile-clear-btn')?.addEventListener('click', () => { clearFilters(); closePanel(); });
 }
+
+// الاستماع لحدث المزامنة لإعادة رسم قائمة التصنيفات والمنتجات ديناميكياً فور الحصول على البيانات
+window.addEventListener('nasma:supabase-synced', () => {
+  console.log('🔄 تم المزامنة مع Supabase، إعادة رسم صفحة المنتجات...');
+  NasmaStore.applySettingsToDOM();
+  NasmaStore.buildHeader('products');
+  NasmaStore.buildFooter();
+  buildCategoryFilters();
+  renderProducts();
+});
 </script>
 
 <!-- Service Worker Registration -->

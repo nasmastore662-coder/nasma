@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="ar" dir="rtl">
 <head>
   <meta charset="UTF-8">
@@ -383,6 +383,12 @@
         <span class="breadcrumb-current" id="breadcrumb-product-name">...</span>
       </nav>
 
+      <!-- Loading State -->
+      <div id="product-loading" style="display:none;text-align:center;padding:var(--space-20) 0;">
+        <div class="skeleton-image" style="width: 80px; height: 80px; border-radius: var(--radius-full); margin: 0 auto var(--space-4);"></div>
+        <p style="font-size:var(--text-xl);color:var(--color-text-secondary);">جاري تحميل تفاصيل المنتج...</p>
+      </div>
+
       <!-- Not Found -->
       <div id="product-not-found" style="display:none;text-align:center;padding:var(--space-20) 0;">
         <p style="font-size:var(--text-2xl);color:var(--color-text-secondary);">المنتج غير موجود</p>
@@ -576,28 +582,66 @@ let selectedSize   = '';
 let selectedColor  = '';
 let qty            = 1;
 
-document.addEventListener('DOMContentLoaded', () => {
-  NasmaStore.initPage('products');
+let syncCheckTimeout = null;
 
+function loadProductDetail() {
   const params = new URLSearchParams(location.search);
   const id     = params.get('id');
 
   if (!id) { showNotFound(); return; }
 
   const product = NasmaDB.ProductsDB.getById(id);
-  if (!product) { showNotFound(); return; }
+  if (product) {
+    document.getElementById('product-not-found').style.display = 'none';
+    document.getElementById('product-loading').style.display = 'none';
+    document.getElementById('product-detail-content').style.display = '';
 
-  currentProduct = product;
-  renderProduct(product);
-  renderRelated(product);
-  initProductEvents(product);
-  initStickyBar(product);
-  initTabs();
+    currentProduct = product;
+    renderProduct(product);
+    renderRelated(product);
+    initProductEvents(product);
+    initStickyBar(product);
+    initTabs();
 
-  // تتبع مشاهدة المنتج للبيكسلات
-  if (typeof window.nasmaTrackViewContent === 'function') {
-    window.nasmaTrackViewContent(product);
+    if (typeof window.nasmaTrackViewContent === 'function') {
+      window.nasmaTrackViewContent(product);
+    }
+    
+    if (syncCheckTimeout) {
+      clearTimeout(syncCheckTimeout);
+      syncCheckTimeout = null;
+    }
+  } else {
+    if (window.supabaseClient) {
+      console.log('⏳ المنتج غير موجود محلياً، جاري إظهار حالة التحميل بانتظار المزامنة...');
+      showLoadingState();
+      
+      if (!syncCheckTimeout) {
+        syncCheckTimeout = setTimeout(() => {
+          const reCheck = NasmaDB.ProductsDB.getById(id);
+          if (!reCheck) {
+            console.log('⚠️ انتهت مهلة الانتظار ولم يتم العثور على المنتج.');
+            showNotFound();
+          }
+        }, 5000);
+      }
+    } else {
+      showNotFound();
+    }
   }
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+  NasmaStore.initPage('products');
+  loadProductDetail();
+});
+
+window.addEventListener('nasma:supabase-synced', () => {
+  console.log('🔄 تم المزامنة مع Supabase، إعادة محاولة تحميل تفاصيل المنتج...');
+  NasmaStore.applySettingsToDOM();
+  NasmaStore.buildHeader('products');
+  NasmaStore.buildFooter();
+  loadProductDetail();
 });
 
 /* --- عرض المنتج --- */
@@ -838,7 +882,15 @@ function renderRelated(p) {
 /* --- Not Found --- */
 function showNotFound() {
   document.getElementById('product-detail-content').style.display = 'none';
+  document.getElementById('product-loading').style.display = 'none';
   document.getElementById('product-not-found').style.display = '';
+}
+
+function showLoadingState() {
+  document.getElementById('product-detail-content').style.display = 'none';
+  document.getElementById('product-not-found').style.display = 'none';
+  const loadEl = document.getElementById('product-loading');
+  if (loadEl) loadEl.style.display = '';
 }
 
 /* --- مشاركة --- */

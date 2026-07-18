@@ -242,6 +242,23 @@ function applySettingsToDOM(settings) {
 }
 
 /* ===========================================
+   بناء بطاقة منتج هيكلية مؤقتة (Skeleton Card)
+   =========================================== */
+function buildProductSkeletonCard() {
+  return `
+<article class="product-card skeleton-card">
+  <div class="product-image-wrapper">
+    <div class="skeleton-image"></div>
+  </div>
+  <div class="product-info skeleton-info">
+    <div class="skeleton-text skeleton-title"></div>
+    <div class="skeleton-text skeleton-rating"></div>
+    <div class="skeleton-text skeleton-price"></div>
+  </div>
+</article>`;
+}
+
+/* ===========================================
    بناء بطاقة منتج
    =========================================== */
 function buildProductCard(product, index = 0) {
@@ -352,7 +369,10 @@ function buildEmptyState(msg = 'لم يتم إضافة منتجات بعد') {
 /* ===========================================
    أحداث الهيدر
    =========================================== */
+let headerEventsInitialized = false;
 function initHeaderEvents() {
+  if (headerEventsInitialized) return;
+  headerEventsInitialized = true;
   // موبايل
   const ham     = document.getElementById('hamburger');
   const menu    = document.getElementById('mobile-menu');
@@ -447,7 +467,10 @@ function initHeaderEvents() {
 /* ===========================================
    أحداث السلة والمفضلة (تفويض)
    =========================================== */
+let storeEventsInitialized = false;
 function initStoreEvents() {
+  if (storeEventsInitialized) return;
+  storeEventsInitialized = true;
   // أضف للسلة
   document.addEventListener('click', e => {
     const btn = e.target.closest('.add-to-cart-btn');

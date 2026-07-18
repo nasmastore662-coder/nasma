@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="ar" dir="rtl">
 <head>
   <meta charset="UTF-8">
@@ -85,6 +85,15 @@
     window.addEventListener('nasma:wishlist-updated', () => {
       renderWishlist();
     });
+  });
+
+  // الاستماع لحدث المزامنة لإعادة رسم قائمة المفضلة والأسعار وتطبيق الهوية
+  window.addEventListener('nasma:supabase-synced', () => {
+    console.log('🔄 تم المزامنة مع Supabase، إعادة رسم قائمة المفضلة...');
+    NasmaStore.applySettingsToDOM();
+    NasmaStore.buildHeader('wishlist');
+    NasmaStore.buildFooter();
+    renderWishlist();
   });
 
   function renderWishlist() {

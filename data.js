@@ -998,86 +998,110 @@ async function syncWithSupabase() {
     console.log('ℹ️ المزامنة مع Supabase غير نشطة لعدم توفر المفاتيح.');
     return;
   }
-  console.log('🔄 جاري المزامنة مع Supabase...');
+
+  const path = location.pathname;
+  const isAdmin = path.includes('admin.html');
+  const isCheckoutOrCart = path.includes('checkout.html') || path.includes('cart.html');
+
+  // تحديد ما إذا كان يجب مزامنة كل جدول حسب الصفحة الحالية لتوفير الطاقة والشبكة
+  const syncCats = true;
+  const syncProds = true;
+  const syncSettings = true;
+  const syncCoupons = isAdmin || isCheckoutOrCart;
+  const syncShipping = isAdmin || isCheckoutOrCart;
+  const syncOrders = isAdmin;
+
+  console.log(`🔄 جاري المزامنة بالتوازي مع Supabase (التحميل المخصص للمسار: ${path})...`);
 
   try {
-    // 1. مزامنة التصنيفات
-    {
-      const { data: remoteCats, error: catError } = await window.supabaseClient.from('categories').select('*');
-      if (!catError) {
-        if (remoteCats && remoteCats.length > 0) {
-          localStorage.setItem(DB_KEYS.CATEGORIES, JSON.stringify(remoteCats.map(toCamelCase)));
+    const promises = [];
+    const keys = [];
+
+    if (syncCats) {
+      promises.push(window.supabaseClient.from('categories').select('*').order('order', { ascending: true }));
+      keys.push('categories');
+    }
+    if (syncProds) {
+      promises.push(window.supabaseClient.from('products').select('*'));
+      keys.push('products');
+    }
+    if (syncCoupons) {
+      promises.push(window.supabaseClient.from('coupons').select('*'));
+      keys.push('coupons');
+    }
+    if (syncShipping) {
+      promises.push(window.supabaseClient.from('shipping_cities').select('*'));
+      keys.push('shipping_cities');
+    }
+    if (syncSettings) {
+      promises.push(window.supabaseClient.from('store_settings').select('*').eq('id', 'settings').maybeSingle());
+      keys.push('store_settings');
+    }
+    if (syncOrders) {
+      promises.push(window.supabaseClient.from('orders').select('*').order('created_at', { ascending: false }));
+      keys.push('orders');
+    }
+
+    const results = await Promise.all(promises);
+
+    for (let i = 0; i < keys.length; i++) {
+      const key = keys[i];
+      const { data, error } = results[i];
+
+      if (error) {
+        console.error(`❌ Supabase sync error for ${key}:`, error);
+        continue;
+      }
+
+      if (key === 'categories' && data) {
+        if (data.length > 0) {
+          localStorage.setItem(DB_KEYS.CATEGORIES, JSON.stringify(data.map(toCamelCase)));
         } else {
           const localCats = CategoriesDB.getAll();
           if (localCats.length > 0) {
             await window.supabaseClient.from('categories').insert(localCats.map(toSnakeCase));
           }
         }
-      } else {
-        console.error('❌ Supabase sync categories error:', catError);
       }
-    }
 
-    // 2. مزامنة المنتجات
-    {
-      const { data: remoteProds, error: prodError } = await window.supabaseClient.from('products').select('*');
-      if (!prodError) {
-        if (remoteProds && remoteProds.length > 0) {
-          localStorage.setItem(DB_KEYS.PRODUCTS, JSON.stringify(remoteProds.map(toCamelCase)));
+      if (key === 'products' && data) {
+        if (data.length > 0) {
+          localStorage.setItem(DB_KEYS.PRODUCTS, JSON.stringify(data.map(toCamelCase)));
         } else {
           const localProds = ProductsDB.getAll();
           if (localProds.length > 0) {
             await window.supabaseClient.from('products').insert(localProds.map(toSnakeCase));
           }
         }
-      } else {
-        console.error('❌ Supabase sync products error:', prodError);
       }
-    }
 
-    // 3. مزامنة الكوبونات
-    {
-      const { data: remoteCoupons, error: couponError } = await window.supabaseClient.from('coupons').select('*');
-      if (!couponError) {
-        if (remoteCoupons && remoteCoupons.length > 0) {
-          localStorage.setItem(DB_KEYS.COUPONS, JSON.stringify(remoteCoupons.map(toCamelCase)));
+      if (key === 'coupons' && data) {
+        if (data.length > 0) {
+          localStorage.setItem(DB_KEYS.COUPONS, JSON.stringify(data.map(toCamelCase)));
         } else {
           const localCoupons = CouponsDB.getAll();
           if (localCoupons.length > 0) {
             await window.supabaseClient.from('coupons').insert(localCoupons.map(toSnakeCase));
           }
         }
-      } else {
-        console.error('❌ Supabase sync coupons error:', couponError);
       }
-    }
 
-    // 4. مزامنة محافظات الشحن
-    {
-      const { data: remoteCities, error: cityError } = await window.supabaseClient.from('shipping_cities').select('*');
-      if (!cityError) {
-        if (remoteCities && remoteCities.length > 0) {
-          localStorage.setItem(DB_KEYS.SHIPPING, JSON.stringify(remoteCities.map(toCamelCase)));
+      if (key === 'shipping_cities' && data) {
+        if (data.length > 0) {
+          localStorage.setItem(DB_KEYS.SHIPPING, JSON.stringify(data.map(toCamelCase)));
         } else {
           const localCities = ShippingDB.getAll();
           if (localCities.length > 0) {
             await window.supabaseClient.from('shipping_cities').insert(localCities.map(toSnakeCase));
           }
         }
-      } else {
-        console.error('❌ Supabase sync shipping_cities error:', cityError);
       }
-    }
 
-    // 5. مزامنة الإعدادات
-    {
-      const { data: remoteSettings, error: settingsError } = await window.supabaseClient.from('store_settings').select('*').eq('id', 'settings').maybeSingle();
-      if (!settingsError) {
-        if (remoteSettings) {
-          localStorage.setItem(DB_KEYS.SETTINGS, JSON.stringify(toCamelCase(remoteSettings)));
+      if (key === 'store_settings') {
+        if (data) {
+          localStorage.setItem(DB_KEYS.SETTINGS, JSON.stringify(toCamelCase(data)));
         } else {
           const s = SettingsDB.get();
-          // بناء payload صريح بأسماء الأعمدة المعروفة في Supabase فقط
           const settingsPayload = {
             id: 'settings',
             store_name:           s.storeName        || 'نسما',
@@ -1117,23 +1141,15 @@ async function syncWithSupabase() {
           const { error: insertErr } = await window.supabaseClient.from('store_settings').upsert([settingsPayload], { onConflict: 'id' });
           if (insertErr) console.error('❌ Supabase store_settings upsert error:', JSON.stringify(insertErr));
         }
-      } else {
-        console.error('❌ Supabase sync store_settings error:', settingsError);
       }
-    }
 
-    // 6. مزامنة الطلبات (للأدمن فقط)
-    if (location.pathname.includes('admin.html')) {
-      const { data: remoteOrders, error: orderError } = await window.supabaseClient.from('orders').select('*').order('created_at', { ascending: false });
-      if (!orderError && remoteOrders) {
-        localStorage.setItem(DB_KEYS.ORDERS, JSON.stringify(remoteOrders.map(toCamelCase)));
+      if (key === 'orders' && data) {
+        localStorage.setItem(DB_KEYS.ORDERS, JSON.stringify(data.map(toCamelCase)));
         window.dispatchEvent(new CustomEvent('nasma:orders-synced'));
-      } else if (orderError) {
-        console.error('❌ Supabase sync orders error:', orderError);
       }
     }
 
-    console.log('✅ اكتملت مزامنة Supabase بنجاح.');
+    console.log('✅ اكتملت مزامنة Supabase بنجاح بالتوازي.');
     updateCartBadge();
     
     // إطلاق حدث عام يدل على اكتمال المزامنة لإعادة رسم الصفحات إذا كانت هناك حاجة

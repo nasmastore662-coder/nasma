@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="ar" dir="rtl">
 <head>
   <meta charset="UTF-8">
@@ -353,6 +353,31 @@
     if (typeof window.nasmaTrackInitiateCheckout === 'function') {
       window.nasmaTrackInitiateCheckout(checkoutTotal, cart);
     }
+  });
+
+  // الاستماع لحدث المزامنة لإعادة تعبئة خيارات المدن والأسعار والتفاصيل
+  window.addEventListener('nasma:supabase-synced', () => {
+    console.log('🔄 تم المزامنة مع Supabase، إعادة تعبئة خيارات المدن وملخص الدفع...');
+    NasmaStore.applySettingsToDOM();
+    NasmaStore.buildHeader('cart');
+    NasmaStore.buildFooter();
+    
+    // حفظ القيمة المحددة حالياً لتجنب مسح اختيار المستخدم
+    const selectedCity = document.getElementById('cust-city').value;
+    
+    // تنظيف القائمة وإعادة تعبئتها
+    const citySelect = document.getElementById('cust-city');
+    if (citySelect) {
+      citySelect.innerHTML = '<option value="" disabled selected>اختر المحافظة...</option>';
+      populateCitiesDropdown();
+      if (selectedCity) {
+        citySelect.value = selectedCity;
+      }
+    }
+    
+    const cart = NasmaDB.CartDB.get();
+    renderCheckoutSummary(cart);
+    updateShippingCost();
   });
 
   function populateCitiesDropdown() {

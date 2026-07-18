@@ -2192,6 +2192,53 @@ ul, ol {
 .animate-delay-3 { transition-delay: 0.3s; }
 .animate-delay-4 { transition-delay: 0.4s; }
 
+/* ——— الهياكل الهيكلية المؤقتة (Skeleton Loaders) ——— */
+@keyframes pulse {
+  0% { background-color: var(--color-border-light); }
+  50% { background-color: var(--color-bg-alt); }
+  100% { background-color: var(--color-border-light); }
+}
+
+.skeleton-card {
+  pointer-events: none;
+}
+
+.skeleton-image {
+  width: 100%;
+  aspect-ratio: 6/7;
+  border-radius: var(--radius-lg);
+  animation: pulse 1.5s infinite ease-in-out;
+  background-color: var(--color-border-light);
+}
+
+.skeleton-info {
+  padding: var(--space-4) 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.skeleton-text {
+  height: 12px;
+  border-radius: var(--radius-sm);
+  animation: pulse 1.5s infinite ease-in-out;
+  background-color: var(--color-border-light);
+}
+
+.skeleton-title {
+  width: 85%;
+  height: 16px;
+}
+
+.skeleton-rating {
+  width: 45%;
+}
+
+.skeleton-price {
+  width: 30%;
+  height: 14px;
+}
+
 /* ===================================
    Responsive — تابلت
    =================================== */

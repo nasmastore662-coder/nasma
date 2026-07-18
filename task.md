@@ -5,6 +5,7 @@
 - [x] تحويل 6 صور PNG → WebP (توفير 85-93%)
 - [x] تحويل 6 صور PNG → AVIF (توفير 88-94%)
 - [x] استبدال `<img>` بـ `<picture>` مع AVIF/WebP/PNG في index.html
+- [x] وضع هياكل المنتجات بشكل افتراضي في `products.html` وتحديث منطق التحميل والاستماع لحدث المزامنةأحداث في `store.js`
 - [x] إضافة `width` و `height` لمنع CLS في جميع الصور
 - [x] `loading="lazy"` على جميع صور المنتجات والتصنيفات
 - [x] `fetchpriority="high"` و `loading="eager"` على Hero Image فقط
@@ -20,6 +21,8 @@
 - [x] إضافة `<link rel="manifest">` في جميع الصفحات
 - [x] إضافة `theme-color` meta tag في جميع الصفحات
 - [x] إضافة `og:image` في index.html
+- [x] إضافة مستمع لـ `nasma:supabase-synced` في `wishlist.html` لإعادة الرسم التلقائية
+- [x] إضافة مستمع لـ `nasma:supabase-synced` في `checkout.html` لتحديث بيانات الشحن والأسعار المزامنة تلقائياً
 
 ## المرحلة 4 — Service Worker ✅
 - [x] إنشاء `sw.js` مع Cache First للصور/CSS/JS
