@@ -2,8 +2,25 @@ const sharp = require('sharp');
 const fs = require('fs');
 const path = require('path');
 
+// محتوى الـ SVG الجديد مع كتابة كلمة "نسما" بخلفية متدرجة ذهبية راقية
+const svgContent = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
+  <defs>
+    <linearGradient id="bgGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#D5BE9E"/>
+      <stop offset="100%" stop-color="#A68962"/>
+    </linearGradient>
+  </defs>
+  <rect width="100" height="100" rx="24" fill="url(#bgGrad)"/>
+  <text x="50%" y="54%" 
+        font-family="'Amiri', 'Cairo', 'Tajawal', 'Segoe UI', 'Tahoma', sans-serif" 
+        font-size="34" 
+        font-weight="bold" 
+        fill="#FAF8F5" 
+        text-anchor="middle" 
+        dominant-baseline="middle">نسما</text>
+</svg>`;
+
 // دالة لإنشاء ملف ICO حقيقي من صور PNG
-// تنسيق ICO: header + directory + image data
 async function createRealIco(inputSvgBuffer, outputPath) {
   // إنشاء صور PNG بأحجام ICO القياسية
   const sizes = [16, 32, 48];
@@ -58,28 +75,45 @@ async function createRealIco(inputSvgBuffer, outputPath) {
   console.log(`✓ Real ICO created: ${path.basename(outputPath)} (${ico.length} bytes)`);
 }
 
-const svgContent = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
-  <rect width="100" height="100" rx="22" fill="#C4A882"/>
-  <path d="M 20 58 L 20 38 Q 20 18 50 18 Q 80 18 80 38 L 80 58" 
-        stroke="#FAF8F5" stroke-width="11" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
-  <path d="M 20 58 Q 20 72 32 72 L 68 72 Q 80 72 80 58"
-        stroke="#FAF8F5" stroke-width="11" fill="none" stroke-linecap="round"/>
-  <circle cx="50" cy="87" r="6" fill="#FAF8F5"/>
-</svg>`;
-
 async function main() {
   const svgBuffer = Buffer.from(svgContent);
+  const imagesDir = path.join(__dirname, 'assets', 'images');
   
-  // إنشاء ملف ICO حقيقي
+  // التأكد من وجود مجلد الصور
+  if (!fs.existsSync(imagesDir)) {
+    fs.mkdirSync(imagesDir, { recursive: true });
+  }
+
+  // 1. حفظ ملف favicon.svg المحدث
+  fs.writeFileSync(path.join(imagesDir, 'favicon.svg'), svgContent);
+  console.log('✓ Updated assets/images/favicon.svg');
+  
+  // 2. إنشاء ملف favicon.ico في الجذر
   await createRealIco(svgBuffer, path.join(__dirname, 'favicon.ico'));
   
-  // التحقق
-  const icoSize = fs.statSync(path.join(__dirname, 'favicon.ico')).size;
-  console.log(`favicon.ico size: ${icoSize} bytes`);
+  // 3. إنشاء وتوليد جميع أحجام الـ PNG المطلوبة للأجهزة وشاشات الريتينا والـ PWA
+  const pngSizes = {
+    'favicon-16.png': 16,
+    'favicon-32.png': 32,
+    'favicon-48.png': 48,
+    'favicon-64.png': 64,
+    'favicon-128.png': 128,
+    'favicon-180.png': 180,
+    'favicon-192.png': 192,
+    'favicon-512.png': 512,
+    'apple-touch-icon.png': 180
+  };
   
-  // قراءة أول 4 bytes للتحقق من التوقيع
-  const buf = fs.readFileSync(path.join(__dirname, 'favicon.ico'));
-  console.log(`ICO signature bytes: ${buf[0]},${buf[1]},${buf[2]},${buf[3]} (should be 0,0,1,0)`);
+  for (const [filename, size] of Object.entries(pngSizes)) {
+    const outputPath = path.join(imagesDir, filename);
+    await sharp(svgBuffer)
+      .resize(size, size)
+      .png()
+      .toFile(outputPath);
+    console.log(`✓ Generated: assets/images/${filename} (${size}x${size})`);
+  }
+  
+  console.log('\n🎉 All favicons and touch icons generated successfully with "نسما"!');
 }
 
 main().catch(console.error);
