@@ -1,10 +1,15 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="ar" dir="rtl">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="description" content="تصفحي جميع منتجات نسما — عبايات، شنط، إكسسوارات نسائية فاخرة">
   <meta name="theme-color" content="#C4A882">
+  <!-- Favicon -->
+  <link rel="icon" type="image/png" sizes="32x32" href="assets/images/favicon-32.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="assets/images/favicon-16.png">
+  <link rel="icon" type="image/x-icon" href="favicon.ico">
+  <link rel="apple-touch-icon" sizes="180x180" href="assets/images/apple-touch-icon.png">
   <title>المنتجات — نسما</title>
 
   <!-- Web App Manifest -->
@@ -260,6 +265,10 @@
     .filter-chip:hover { background: var(--color-primary); color: #fff; }
     .filter-chip svg { width: 12px; height: 12px; }
 
+    .products-grid:not(.list-view) {
+      grid-template-columns: repeat(3, 1fr);
+    }
+
     @media (max-width: 1024px) {
       .products-page-layout {
         grid-template-columns: 1fr;
@@ -268,6 +277,9 @@
         display: none;
       }
       .filter-toggle-btn { display: flex; }
+      .products-grid:not(.list-view) {
+        grid-template-columns: repeat(2, 1fr);
+      }
     }
     @media (max-width: 640px) {
       .products-grid:not(.list-view) {
@@ -380,7 +392,7 @@
 
         <!-- المنتجات -->
         <div>
-          <div class="products-grid" id="products-grid" style="grid-template-columns:repeat(3,1fr);">
+          <div class="products-grid" id="products-grid">
             <!-- تُبنى ديناميكياً -->
           </div>
           <!-- Pagination -->
@@ -505,8 +517,8 @@ function renderProducts() {
     grid.innerHTML = paged.map((p, i) => NasmaStore.buildProductCard(p, i)).join('');
   }
 
+  grid.style.gridTemplateColumns = '';
   if (currentView === 'grid') {
-    grid.style.gridTemplateColumns = 'repeat(3,1fr)';
     grid.classList.remove('list-view');
   } else {
     grid.classList.add('list-view');
