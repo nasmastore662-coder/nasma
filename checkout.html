@@ -1,0 +1,516 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#C4A882">
+  <title>إتمام الطلب — نسما</title>
+
+  <!-- Web App Manifest -->
+  <link rel="manifest" href="manifest.json">
+
+  <!-- DNS Prefetch & Preconnect -->
+  <link rel="dns-prefetch" href="https://fonts.googleapis.com">
+  <link rel="dns-prefetch" href="https://fonts.gstatic.com">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+
+  <!-- Google Fonts -->
+  <link href="https://fonts.googleapis.com/css2?family=Amiri:wght@400;700&family=Tajawal:wght@300;400;500;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+  <style>
+    .checkout-layout {
+      display: grid;
+      grid-template-columns: 1.2fr 1fr;
+      gap: var(--space-8);
+      align-items: start;
+    }
+
+    .checkout-form-panel, .checkout-summary-panel {
+      background: var(--color-card);
+      border-radius: var(--radius-xl);
+      padding: var(--space-6);
+      border: 1px solid var(--color-border);
+    }
+
+    .form-group-title {
+      font-size: var(--text-base);
+      font-weight: 700;
+      color: var(--color-text);
+      margin-bottom: var(--space-4);
+      padding-bottom: var(--space-2);
+      border-bottom: 1.5px solid var(--color-border);
+      display: flex;
+      align-items: center;
+      gap: var(--space-2);
+    }
+
+    .form-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: var(--space-4);
+    }
+    .form-grid .full-width {
+      grid-column: span 2;
+    }
+
+    .checkout-input-group {
+      display: flex;
+      flex-direction: column;
+      gap: var(--space-2);
+      margin-bottom: var(--space-4);
+    }
+
+    .checkout-label {
+      font-size: var(--text-sm);
+      font-weight: 600;
+      color: var(--color-text);
+    }
+
+    .checkout-input {
+      width: 100%;
+      padding: var(--space-3) var(--space-4);
+      border: 1.5px solid var(--color-border);
+      border-radius: var(--radius-md);
+      font-family: var(--font-primary);
+      font-size: var(--text-sm);
+      background: var(--color-bg);
+      outline: none;
+      transition: border-color var(--transition-base);
+    }
+    .checkout-input:focus {
+      border-color: var(--color-primary);
+      box-shadow: 0 0 0 3px rgba(196,168,130,0.15);
+    }
+
+    /* طرق الدفع */
+    .payment-method-box {
+      border: 1.5px solid var(--color-primary);
+      background: var(--color-secondary);
+      border-radius: var(--radius-lg);
+      padding: var(--space-4);
+      margin-top: var(--space-2);
+      display: flex;
+      align-items: center;
+      gap: var(--space-3);
+    }
+
+    /* ملخص الطلب */
+    .summary-product-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: var(--space-4);
+      padding: var(--space-3) 0;
+      border-bottom: 1px solid var(--color-border-light);
+    }
+    .summary-product-item:last-child {
+      border-bottom: none;
+    }
+
+    .summary-product-img {
+      width: 50px;
+      height: 65px;
+      object-fit: cover;
+      border-radius: var(--radius-md);
+      background: var(--color-bg-alt);
+    }
+
+    .summary-product-info {
+      flex: 1;
+    }
+    .summary-product-name {
+      font-size: var(--text-sm);
+      font-weight: 600;
+    }
+    .summary-product-qty {
+      font-size: var(--text-xs);
+      color: var(--color-text-light);
+    }
+
+    .summary-product-price {
+      font-weight: 600;
+      font-size: var(--text-sm);
+    }
+
+    /* شاشة النجاح */
+    .success-panel {
+      text-align: center;
+      padding: var(--space-16) var(--space-6);
+      background: var(--color-card);
+      border-radius: var(--radius-xl);
+      border: 1px solid var(--color-border);
+      max-width: 600px;
+      margin: 0 auto;
+    }
+
+    .success-icon {
+      width: 80px;
+      height: 80px;
+      background: #D1FAE5;
+      color: #10B981;
+      border-radius: var(--radius-full);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin: 0 auto var(--space-6);
+    }
+    .success-icon svg {
+      width: 40px;
+      height: 40px;
+    }
+
+    @media (max-width: 900px) {
+      .checkout-layout {
+        grid-template-columns: 1fr;
+      }
+      .form-grid {
+        grid-template-columns: 1fr;
+      }
+      .form-grid .full-width {
+        grid-column: span 1;
+      }
+    }
+  </style>
+</head>
+<body>
+
+<div id="nasma-header"></div>
+
+<main>
+  <section class="section-padding" style="padding-top:var(--space-8);">
+    <div class="container">
+      
+      <!-- مسار التنقل -->
+      <nav class="breadcrumb page-breadcrumb" aria-label="مسار التنقل">
+        <a href="index.html" class="breadcrumb-item">الرئيسية</a>
+        <span class="breadcrumb-sep">›</span>
+        <a href="cart.html" class="breadcrumb-item">سلة التسوق</a>
+        <span class="breadcrumb-sep">›</span>
+        <span class="breadcrumb-current">إتمام الطلب</span>
+      </nav>
+
+      <div id="checkout-content">
+        <div class="checkout-layout">
+          
+          <!-- استمارة الطلب -->
+          <div class="checkout-form-panel">
+            <form id="checkout-form" onsubmit="submitOrder(event)">
+              
+              <!-- بيانات العميل -->
+              <div>
+                <h2 class="form-group-title">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18">
+                    <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                    <circle cx="12" cy="7" r="4"></circle>
+                  </svg>
+                  بيانات الشحن
+                </h2>
+                
+                <div class="form-grid">
+                  <div class="checkout-input-group full-width">
+                    <label class="checkout-label" for="cust-name">الاسم الكامل *</label>
+                    <input type="text" id="cust-name" class="checkout-input" placeholder="اسمك الكامل" required>
+                  </div>
+                  
+                  <div class="checkout-input-group">
+                    <label class="checkout-label" for="cust-phone">رقم الجوال *</label>
+                    <input type="tel" id="cust-phone" class="checkout-input" placeholder="010xxxxxxxx" pattern="01[0-2,5][0-9]{8}" required>
+                  </div>
+
+                  <div class="checkout-input-group">
+                    <label class="checkout-label" for="cust-email">البريد الإلكتروني</label>
+                    <input type="email" id="cust-email" class="checkout-input" placeholder="name@example.com">
+                  </div>
+
+                  <div class="checkout-input-group">
+                    <label class="checkout-label" for="cust-city">المحافظة *</label>
+                    <select id="cust-city" class="checkout-input" required onchange="updateShippingCost()">
+                      <option value="" disabled selected>اختر المحافظة...</option>
+                    </select>
+                  </div>
+
+                  <div class="checkout-input-group">
+                    <label class="checkout-label" for="cust-zip">الرمز البريدي</label>
+                    <input type="text" id="cust-zip" class="checkout-input" placeholder="12345">
+                  </div>
+
+                  <div class="checkout-input-group full-width">
+                    <label class="checkout-label" for="cust-address">العنوان بالكامل *</label>
+                    <input type="text" id="cust-address" class="checkout-input" placeholder="اسم الحي، اسم الشارع، رقم المنزل" required>
+                  </div>
+
+                  <div class="checkout-input-group full-width">
+                    <label class="checkout-label" for="cust-notes">ملاحظات على الطلب</label>
+                    <textarea id="cust-notes" class="checkout-input" style="min-height:80px; resize:vertical;" placeholder="أية ملاحظات خاصة بالتوصيل أو الاستلام..."></textarea>
+                  </div>
+                </div>
+              </div>
+
+              <!-- طريقة الدفع -->
+              <div style="margin-top:var(--space-6);">
+                <h2 class="form-group-title">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18">
+                    <rect x="2" y="5" width="20" height="14" rx="2" ry="2"></rect>
+                    <line x1="2" y1="10" x2="22" y2="10"></line>
+                  </svg>
+                  طريقة الدفع
+                </h2>
+                
+                <div class="payment-method-box">
+                  <input type="radio" id="pay-cod" name="pay-method" checked style="width:18px; height:18px; accent-color: var(--color-primary);">
+                  <div>
+                    <label for="pay-cod" style="font-weight:700; cursor:pointer;">الدفع عند الاستلام (COD)</label>
+                    <p style="font-size:var(--text-xs); color:var(--color-text-secondary); margin-top:2px;">ادفعي نقداً أو عبر بطاقتكِ عند استلام طلبكِ من مندوب التوصيل.</p>
+                  </div>
+                </div>
+              </div>
+
+              <button type="submit" class="btn btn-primary" style="width:100%; justify-content:center; margin-top:var(--space-8); font-size:var(--text-base); padding:var(--space-4) 0;">
+                تأكيد وإرسال الطلب
+              </button>
+
+            </form>
+          </div>
+
+          <!-- ملخص الطلب -->
+          <div class="checkout-summary-panel">
+            <h2 class="form-group-title" style="margin-bottom:var(--space-5);">ملخص الطلب</h2>
+            
+            <div id="checkout-products-list" style="margin-bottom:var(--space-5);">
+              <!-- توليد ديناميكي -->
+            </div>
+
+            <div style="display:flex; flex-direction:column; gap: var(--space-4); border-top: 1.5px solid var(--color-border); padding-top: var(--space-4);">
+              <div class="summary-row">
+                <span>المجموع الفرعي</span>
+                <span id="chk-subtotal">0 ج.م</span>
+              </div>
+              <div class="summary-row" id="chk-discount-row" style="display:none; color: #EF4444;">
+                <span>خصم الكوبون</span>
+                <span id="chk-discount">-0 ج.م</span>
+              </div>
+              <div class="summary-row">
+                <span>تكلفة الشحن</span>
+                <span id="chk-shipping">مجاني</span>
+              </div>
+              <div class="summary-row total">
+                <span>المجموع النهائي</span>
+                <span id="chk-total" style="font-family: var(--font-display); font-size: var(--text-2xl); font-weight:700; color: var(--color-primary-dark);">0 ج.م</span>
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+    </div>
+  </section>
+</main>
+
+<div id="nasma-footer"></div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="supabase.js"></script>
+<script src="data.js"></script>
+<script src="store.js"></script>
+<script>
+  'use strict';
+
+  let checkoutSubtotal = 0;
+  let checkoutShipping = 0;
+  let checkoutDiscount = 0;
+  let checkoutTotal = 0;
+  let couponCode = '';
+
+  document.addEventListener('DOMContentLoaded', () => {
+    NasmaStore.initPage('cart');
+
+    const cart = NasmaDB.CartDB.get();
+    if (!cart.length) {
+      window.location.href = 'cart.html';
+      return;
+    }
+
+    populateCitiesDropdown();
+
+    // \u0627\u0633\u062a\u0631\u062c\u0627\u0639 \u0627\u0644\u0645\u062d\u0627\u0641\u0638\u0629 \u0627\u0644\u0645\u062e\u062a\u0627\u0631\u0629 \u0645\u0646 \u0633\u0644\u0629 \u0627\u0644\u062a\u0633\u0648\u0642
+    const savedCity = sessionStorage.getItem('nasma_selected_city');
+    if (savedCity) {
+      const sel = document.getElementById('cust-city');
+      sel.value = savedCity;
+    }
+
+    renderCheckoutSummary(cart);
+
+    // تتبع بدء الدفع للبيكسلات
+    if (typeof window.nasmaTrackInitiateCheckout === 'function') {
+      window.nasmaTrackInitiateCheckout(checkoutTotal, cart);
+    }
+  });
+
+  function populateCitiesDropdown() {
+    const citySelect = document.getElementById('cust-city');
+    const cities = NasmaDB.ShippingDB.getAll();
+    
+    cities.forEach(city => {
+      const opt = document.createElement('option');
+      opt.value = city.name;
+      opt.textContent = city.name;
+      citySelect.appendChild(opt);
+    });
+  }
+
+  function updateShippingCost() {
+    const selectedCity = document.getElementById('cust-city').value;
+    if (!selectedCity) return;
+    
+    const settings = NasmaDB.SettingsDB.get();
+    const cityCost = NasmaDB.ShippingDB.getCost(selectedCity);
+    
+    checkoutShipping = cityCost;
+    
+    // Apply free shipping rule if applicable
+    if (checkoutSubtotal >= (settings.freeShippingMin || 2000)) {
+      checkoutShipping = 0;
+    }
+    
+    // Apply coupon free shipping rule if applicable
+    const couponData = sessionStorage.getItem('nasma_applied_coupon');
+    if (couponData) {
+      const parsed = JSON.parse(couponData);
+      if (parsed.freeShipping) {
+        checkoutShipping = 0;
+      }
+    }
+    
+    checkoutTotal = Math.max(0, checkoutSubtotal - checkoutDiscount + checkoutShipping);
+    
+    document.getElementById('chk-shipping').textContent = checkoutShipping === 0 ? 'شحن مجاني' : `شحن آمن (${NasmaDB.formatPrice(checkoutShipping)})`;
+    document.getElementById('chk-total').textContent = NasmaDB.formatPrice(checkoutTotal);
+  }
+
+  function renderCheckoutSummary(cart) {
+    const list = document.getElementById('checkout-products-list');
+    list.innerHTML = cart.map(item => `
+      <div class="summary-product-item">
+        <div style="display:flex; align-items:center; gap:var(--space-3);">
+          <img class="summary-product-img" src="${item.image}" alt="${item.name}">
+          <div class="summary-product-info">
+            <h3 class="summary-product-name">${item.name}</h3>
+            <p class="summary-product-qty">الكمية: ${item.qty} ${item.size ? `| الحجم: ${item.size}` : ''}</p>
+          </div>
+        </div>
+        <span class="summary-product-price">${NasmaDB.formatPrice(item.price * item.qty)}</span>
+      </div>
+    `).join('');
+
+    checkoutSubtotal = NasmaDB.CartDB.subtotal();
+    const settings = NasmaDB.SettingsDB.get();
+    
+    const selectedCity = document.getElementById('cust-city').value;
+    checkoutShipping = selectedCity ? NasmaDB.ShippingDB.getCost(selectedCity) : 0;
+    
+    if (checkoutSubtotal >= (settings.freeShippingMin || 2000)) {
+      checkoutShipping = 0;
+    }
+
+    // التحقق من وجود كوبون مطبق في السلة
+    const couponData = sessionStorage.getItem('nasma_applied_coupon');
+    let couponFreeShipping = false;
+    if (couponData) {
+      const parsed = JSON.parse(couponData);
+      couponCode = parsed.code;
+      checkoutDiscount = parsed.discount;
+      couponFreeShipping = !!parsed.freeShipping;
+      document.getElementById('chk-discount-row').style.display = 'flex';
+      document.getElementById('chk-discount').textContent = `-${NasmaDB.formatPrice(checkoutDiscount)}`;
+    }
+
+    if (couponFreeShipping) {
+      checkoutShipping = 0;
+    }
+
+    checkoutTotal = Math.max(0, checkoutSubtotal - checkoutDiscount + checkoutShipping);
+
+    document.getElementById('chk-subtotal').textContent = NasmaDB.formatPrice(checkoutSubtotal);
+    if (selectedCity) {
+      document.getElementById('chk-shipping').textContent = checkoutShipping === 0 ? 'شحن مجاني' : `شحن آمن (${NasmaDB.formatPrice(checkoutShipping)})`;
+    } else {
+      document.getElementById('chk-shipping').textContent = checkoutSubtotal >= (settings.freeShippingMin || 2000) ? 'شحن مجاني' : 'حددي المحافظة لحساب الشحن';
+    }
+    document.getElementById('chk-total').textContent = NasmaDB.formatPrice(checkoutTotal);
+  }
+
+  function submitOrder(e) {
+    e.preventDefault();
+
+    const name = document.getElementById('cust-name').value.trim();
+    const phone = document.getElementById('cust-phone').value.trim();
+    const email = document.getElementById('cust-email').value.trim();
+    const city = document.getElementById('cust-city').value.trim();
+    const zip = document.getElementById('cust-zip').value.trim();
+    const address = document.getElementById('cust-address').value.trim();
+    const notes = document.getElementById('cust-notes').value.trim();
+
+    const orderData = {
+      items: NasmaDB.CartDB.get(),
+      customer: {
+        name,
+        phone,
+        email,
+        city,
+        zip,
+        address
+      },
+      subtotal: checkoutSubtotal,
+      discount: checkoutDiscount,
+      shipping: checkoutShipping,
+      total: checkoutTotal,
+      couponCode,
+      notes
+    };
+
+    const newOrder = NasmaDB.OrdersDB.create(orderData);
+
+    if (newOrder) {
+      // تفريغ السلة
+      NasmaDB.CartDB.clear();
+      sessionStorage.removeItem('nasma_applied_coupon');
+      sessionStorage.removeItem('nasma_selected_city');
+      NasmaDB.updateCartBadge();
+      NasmaStore.showOrderNotification(newOrder);
+
+      // عرض شاشة النجاح
+      const container = document.getElementById('checkout-content');
+      container.innerHTML = `
+        <div class="success-panel animate-on-scroll">
+          <div class="success-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <polyline points="20 6 9 17 4 12"></polyline>
+            </svg>
+          </div>
+          <h2 class="section-title">شكراً لطلبكِ من نسما!</h2>
+          <p class="section-desc" style="margin-bottom:var(--space-6);">تم استلام طلبكِ بنجاح تحت رقم <strong>${newOrder.orderNumber}</strong>. سنتواصل معكِ قريباً لتأكيد تفاصيل التوصيل.</p>
+          <div style="display:flex; justify-content:center; gap:var(--space-3);">
+            <a href="index.html" class="btn btn-secondary">العودة للرئيسية</a>
+            <a href="products.html" class="btn btn-primary">متابعة التسوق</a>
+          </div>
+        </div>
+      `;
+      NasmaStore.initScrollAnimations();
+    }
+  }
+</script>
+
+<!-- Service Worker Registration -->
+<script>
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+      navigator.serviceWorker.register('/sw.js').catch(() => {});
+    });
+  }
+</script>
+
+</body>
+</html>

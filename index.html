@@ -1,0 +1,688 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="نسما ستور — متجر متخصص في العبايات والشنط والإكسسوارات النسائية الراقية. تصاميم فاخرة بلمسة عصرية.">
+  <meta name="keywords" content="نسما, عبايات, شنط, إكسسوارات, متجر نسائي, ملابس نسائية, موضة">
+  <meta name="theme-color" content="#C4A882">
+
+  <!-- Open Graph -->
+  <meta property="og:type"        content="website">
+  <meta property="og:title"       content="نسما ستور — فاخر بلمسة عصرية">
+  <meta property="og:description" content="متجر متخصص في العبايات والشنط والإكسسوارات النسائية الراقية">
+  <meta property="og:image"       content="assets/images/hero.webp">
+
+  <title>نسما — متجر إلكتروني</title>
+
+  <!-- Web App Manifest -->
+  <link rel="manifest" href="manifest.json">
+
+  <!-- DNS Prefetch & Preconnect -->
+  <link rel="dns-prefetch" href="https://fonts.googleapis.com">
+  <link rel="dns-prefetch" href="https://fonts.gstatic.com">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+
+  <!-- Preload Hero Image (LCP) — AVIF أولاً، WebP احتياطي -->
+  <link rel="preload" as="image" href="assets/images/hero.avif" type="image/avif">
+
+  <!-- Google Fonts — display=swap يمنع الحجب -->
+  <link href="https://fonts.googleapis.com/css2?family=Amiri:ital,wght@0,400;0,700;1,400&family=Tajawal:wght@300;400;500;700;800&family=Cairo:wght@300;400;500;700&family=Almarai:wght@300;400;700&family=Playfair+Display:ital,wght@0,400;0,600;1,400&display=swap" rel="stylesheet">
+
+  <!-- Stylesheet -->
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<!-- الهيدر الديناميكي — يُبنى بواسطة NasmaStore.initPage() -->
+<div id="nasma-header"></div>
+
+<!-- ================================================
+     MAIN
+     ================================================ -->
+<main id="home">
+
+  <!-- ==================== Hero ==================== -->
+  <section class="hero" aria-label="الصفحة الرئيسية">
+    <!-- محتوى Hero -->
+    <div class="hero-content" data-aos="fade-right">
+      <!-- عنصر زخرفي -->
+      <div class="hero-decor-1"></div>
+
+      <span class="hero-badge">✦ كولكشن صيف 2025</span>
+
+      <h1 class="hero-title">
+        أناقة تعبّر
+        <span>عنكِ</span>
+      </h1>
+
+      <p class="hero-desc">
+        اكتشفي تشكيلة نسما الحصرية من العبايات الفاخرة والشنط العصرية والإكسسوارات الأنيقة. أسلوب يجمع بين الأصالة والمعاصرة.
+      </p>
+
+      <div class="hero-cta">
+        <a href="#products" class="btn btn-primary" id="hero-shop-btn">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/>
+            <line x1="3" y1="6" x2="21" y2="6"/>
+            <path d="M16 10a4 4 0 0 1-8 0"/>
+          </svg>
+          تسوقي الآن
+        </a>
+        <a href="#categories" class="btn btn-secondary" id="hero-cats-btn">
+          استعرضي التصنيفات
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m9 18 6-6-6-6"/></svg>
+        </a>
+      </div>
+
+      <!-- إحصائيات -->
+      <div class="hero-stats">
+        <div class="hero-stat">
+          <div class="hero-stat-value">+500</div>
+          <div class="hero-stat-label">منتج حصري</div>
+        </div>
+        <div class="hero-stat">
+          <div class="hero-stat-value">+3K</div>
+          <div class="hero-stat-label">عميلة سعيدة</div>
+        </div>
+        <div class="hero-stat">
+          <div class="hero-stat-value">100%</div>
+          <div class="hero-stat-label">جودة مضمونة</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- صورة Hero -->
+    <div class="hero-image-wrapper">
+      <picture>
+        <source srcset="assets/images/hero.avif" type="image/avif">
+        <source srcset="assets/images/hero.webp" type="image/webp">
+        <img
+          id="hero-banner-img"
+          src="assets/images/hero.png"
+          alt="تشكيلة نسما الفاخرة"
+          width="800" height="900"
+          loading="eager"
+          fetchpriority="high"
+          decoding="async"
+        >
+      </picture>
+      <div class="hero-image-overlay"></div>
+      <div class="hero-decor-2"></div>
+    </div>
+  </section>
+
+  <!-- ==================== المزايا ==================== -->
+  <section class="features section-padding-sm" aria-label="مزايا المتجر">
+    <div class="container">
+      <div class="features-grid">
+
+        <article class="feature-item animate-on-scroll">
+          <div class="feature-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7">
+              <rect x="1" y="3" width="15" height="13" rx="1"/>
+              <path d="M16 8h4l3 3v5h-7V8z"/>
+              <circle cx="5.5" cy="18.5" r="2.5"/>
+              <circle cx="18.5" cy="18.5" r="2.5"/>
+            </svg>
+          </div>
+          <div>
+            <p class="feature-title">شحن آمن</p>
+            <p class="feature-desc">شحن آمن لجميع المناطق والمحافظات في أسرع وقت</p>
+          </div>
+        </article>
+
+        <article class="feature-item animate-on-scroll animate-delay-1">
+          <div class="feature-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7">
+              <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+            </svg>
+          </div>
+          <div>
+            <p class="feature-title">دفع آمن 100%</p>
+            <p class="feature-desc">جميع المدفوعات مشفرة ومحمية بأعلى المعايير</p>
+          </div>
+        </article>
+
+        <article class="feature-item animate-on-scroll animate-delay-2">
+          <div class="feature-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7">
+              <polyline points="23 4 23 10 17 10"/>
+              <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/>
+            </svg>
+          </div>
+          <div>
+            <p class="feature-title">إرجاع سهل</p>
+            <p class="feature-desc">سياسة إرجاع مرنة وسهلة لضمان رضاكِ</p>
+          </div>
+        </article>
+
+        <article class="feature-item animate-on-scroll animate-delay-3">
+          <div class="feature-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7">
+              <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+            </svg>
+          </div>
+          <div>
+            <p class="feature-title">دعم على مدار الساعة</p>
+            <p class="feature-desc">فريق خدمة العملاء جاهز لمساعدتكِ دائماً</p>
+          </div>
+        </article>
+
+      </div>
+    </div>
+  </section>
+
+  <!-- ==================== التصنيفات ==================== -->
+  <section class="categories section-padding" id="categories" aria-label="تصنيفات المنتجات">
+    <div class="container">
+
+      <header class="section-header animate-on-scroll">
+        <p class="section-label">تصفحي بالتصنيف</p>
+        <h2 class="section-title">اكتشفي كولكشننا</h2>
+        <p class="section-desc">تشكيلة منتخبة بعناية من أرقى الماركات والتصاميم العصرية</p>
+      </header>
+
+      <div class="categories-grid">
+
+        <!-- عبايات -->
+        <article class="category-card animate-on-scroll" role="button" tabindex="0" aria-label="تصفح العبايات" id="cat-abaya">
+          <picture>
+            <source srcset="assets/images/cat-abaya.avif" type="image/avif">
+            <source srcset="assets/images/cat-abaya.webp" type="image/webp">
+            <img
+              src="assets/images/cat-abaya.png"
+              alt="تصنيف العبايات"
+              width="600" height="600"
+              loading="lazy"
+              decoding="async"
+            >
+          </picture>
+          <div class="category-overlay"></div>
+          <div class="category-content">
+            <h3 class="category-name">العبايات</h3>
+            <p class="category-count">+120 قطعة</p>
+            <span class="category-arrow">
+              تسوقي الآن
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m15 18-6-6 6-6"/></svg>
+            </span>
+          </div>
+        </article>
+
+        <!-- شنط -->
+        <article class="category-card animate-on-scroll animate-delay-1" role="button" tabindex="0" aria-label="تصفح الشنط" id="cat-bags">
+          <picture>
+            <source srcset="assets/images/cat-bags.avif" type="image/avif">
+            <source srcset="assets/images/cat-bags.webp" type="image/webp">
+            <img
+              src="assets/images/cat-bags.png"
+              alt="تصنيف الشنط"
+              width="600" height="600"
+              loading="lazy"
+              decoding="async"
+            >
+          </picture>
+          <div class="category-overlay"></div>
+          <div class="category-content">
+            <h3 class="category-name">الشنط</h3>
+            <p class="category-count">+85 قطعة</p>
+            <span class="category-arrow">
+              تسوقي الآن
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m15 18-6-6 6-6"/></svg>
+            </span>
+          </div>
+        </article>
+
+        <!-- إكسسوارات -->
+        <article class="category-card animate-on-scroll animate-delay-2" role="button" tabindex="0" aria-label="تصفح الإكسسوارات" id="cat-accessories">
+          <picture>
+            <source srcset="assets/images/cat-accessories.avif" type="image/avif">
+            <source srcset="assets/images/cat-accessories.webp" type="image/webp">
+            <img
+              src="assets/images/cat-accessories.png"
+              alt="تصنيف الإكسسوارات"
+              width="600" height="600"
+              loading="lazy"
+              decoding="async"
+            >
+          </picture>
+          <div class="category-overlay"></div>
+          <div class="category-content">
+            <h3 class="category-name">الإكسسوارات</h3>
+            <p class="category-count">+200 قطعة</p>
+            <span class="category-arrow">
+              تسوقي الآن
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m15 18-6-6 6-6"/></svg>
+            </span>
+          </div>
+        </article>
+
+      </div>
+    </div>
+  </section>
+
+  <!-- ==================== المنتجات المميزة ==================== -->
+  <section class="products section-padding" id="products" aria-label="المنتجات المميزة">
+    <div class="container">
+
+      <header class="section-header animate-on-scroll">
+        <p class="section-label">الأكثر طلباً</p>
+        <h2 class="section-title">منتجات مميزة</h2>
+        <p class="section-desc">اختيارات مدروسة تجمع بين الأناقة والجودة العالية</p>
+      </header>
+
+      <div class="products-grid">
+
+        <!-- منتج 1 -->
+        <article class="product-card animate-on-scroll" id="product-1">
+          <div class="product-image-wrapper">
+            <picture>
+            <source srcset="assets/images/prod-1.avif" type="image/avif">
+            <source srcset="assets/images/prod-1.webp" type="image/webp">
+            <img
+              src="assets/images/prod-1.png"
+              alt="عباءة فاخرة بتطريز ذهبي"
+              width="600" height="700"
+              loading="lazy"
+              decoding="async"
+            >
+          </picture>
+            <span class="product-badge new">جديد</span>
+            <div class="product-actions">
+              <button class="product-action-btn" data-wishlist aria-label="أضف للمفضلة" title="مفضلة">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7">
+                  <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78L12 21.23l8.84-8.84a5.5 5.5 0 0 0 0-7.78z"/>
+                </svg>
+              </button>
+              <button class="product-action-btn" aria-label="عرض سريع" title="عرض سريع">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7">
+                  <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+                  <circle cx="12" cy="12" r="3"/>
+                </svg>
+              </button>
+            </div>
+            <button class="product-add-btn" id="add-cart-1" aria-label="أضف للسلة">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/>
+                <line x1="3" y1="6" x2="21" y2="6"/>
+                <path d="M16 10a4 4 0 0 1-8 0"/>
+              </svg>
+              أضف للسلة
+            </button>
+          </div>
+          <div class="product-info">
+            <p class="product-category-tag">عبايات</p>
+            <h3 class="product-name">عباءة فاخرة بتطريز ذهبي كلاسيك</h3>
+            <div class="product-rating">
+              <div class="stars" aria-label="تقييم 5 من 5">★★★★★</div>
+              <span class="rating-count">(42 تقييم)</span>
+            </div>
+            <div class="product-price-row">
+              <span class="product-price">485 ج.م</span>
+              <span class="product-price-old">620 ج.م</span>
+            </div>
+          </div>
+        </article>
+
+        <!-- منتج 2 -->
+        <article class="product-card animate-on-scroll animate-delay-1" id="product-2">
+          <div class="product-image-wrapper">
+            <picture>
+              <source srcset="assets/images/prod-2.avif" type="image/avif">
+              <source srcset="assets/images/prod-2.webp" type="image/webp">
+              <img
+                src="assets/images/prod-2.png"
+                alt="حقيبة يد أنيقة"
+                width="600" height="700"
+                loading="lazy"
+                decoding="async"
+              >
+            </picture>
+            <span class="product-badge new">جديد</span>
+            <div class="product-actions">
+              <button class="product-action-btn" data-wishlist aria-label="أضف للمفضلة" title="مفضلة">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7">
+                  <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78L12 21.23l8.84-8.84a5.5 5.5 0 0 0 0-7.78z"/>
+                </svg>
+              </button>
+              <button class="product-action-btn" aria-label="عرض سريع" title="عرض سريع">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7">
+                  <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+                  <circle cx="12" cy="12" r="3"/>
+                </svg>
+              </button>
+            </div>
+            <button class="product-add-btn" id="add-cart-2" aria-label="أضف للسلة">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/>
+                <line x1="3" y1="6" x2="21" y2="6"/>
+                <path d="M16 10a4 4 0 0 1-8 0"/>
+              </svg>
+              أضف للسلة
+            </button>
+          </div>
+          <div class="product-info">
+            <p class="product-category-tag">شنط</p>
+            <h3 class="product-name">حقيبة يد جلدية بسلسلة ذهبية</h3>
+            <div class="product-rating">
+              <div class="stars" aria-label="تقييم 5 من 5">★★★★★</div>
+              <span class="rating-count">(31 تقييم)</span>
+            </div>
+            <div class="product-price-row">
+              <span class="product-price">320 ج.م</span>
+            </div>
+          </div>
+        </article>
+
+        <!-- منتج 3 — بطاقة placeholder بنمط أنيق -->
+        <article class="product-card animate-on-scroll animate-delay-2" id="product-3">
+          <div class="product-image-wrapper" style="background: linear-gradient(135deg, #F5EFE7 0%, #EDE3D5 100%); display:flex; align-items:center; justify-content:center;">
+            <svg width="80" height="80" viewBox="0 0 24 24" fill="none" stroke="var(--color-primary)" stroke-width="1" opacity="0.5">
+              <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78L12 21.23l8.84-8.84a5.5 5.5 0 0 0 0-7.78z"/>
+            </svg>
+            <div class="product-actions">
+              <button class="product-action-btn" data-wishlist aria-label="أضف للمفضلة">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7">
+                  <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78L12 21.23l8.84-8.84a5.5 5.5 0 0 0 0-7.78z"/>
+                </svg>
+              </button>
+            </div>
+            <button class="product-add-btn" id="add-cart-3" aria-label="أضف للسلة">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/>
+                <line x1="3" y1="6" x2="21" y2="6"/>
+                <path d="M16 10a4 4 0 0 1-8 0"/>
+              </svg>
+              أضف للسلة
+            </button>
+          </div>
+          <div class="product-info">
+            <p class="product-category-tag">إكسسوارات</p>
+            <h3 class="product-name">طقم مجوهرات لؤلؤي فاخر</h3>
+            <div class="product-rating">
+              <div class="stars" aria-label="تقييم 4 من 5">★★★★☆</div>
+              <span class="rating-count">(18 تقييم)</span>
+            </div>
+            <div class="product-price-row">
+              <span class="product-price">195 ج.م</span>
+              <span class="product-price-old">250 ج.م</span>
+            </div>
+          </div>
+        </article>
+
+        <!-- منتج 4 -->
+        <article class="product-card animate-on-scroll animate-delay-3" id="product-4">
+          <div class="product-image-wrapper" style="background: linear-gradient(135deg, #EDE8E1 0%, #E2D9CF 100%); display:flex; align-items:center; justify-content:center;">
+            <svg width="80" height="80" viewBox="0 0 24 24" fill="none" stroke="var(--color-primary)" stroke-width="1" opacity="0.5">
+              <rect x="2" y="7" width="20" height="14" rx="2"/>
+              <path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2"/>
+              <line x1="12" y1="12" x2="12" y2="16"/>
+              <line x1="10" y1="14" x2="14" y2="14"/>
+            </svg>
+            <span class="product-badge sale">خصم 20%</span>
+            <div class="product-actions">
+              <button class="product-action-btn" data-wishlist aria-label="أضف للمفضلة">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7">
+                  <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78L12 21.23l8.84-8.84a5.5 5.5 0 0 0 0-7.78z"/>
+                </svg>
+              </button>
+            </div>
+            <button class="product-add-btn" id="add-cart-4" aria-label="أضف للسلة">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/>
+                <line x1="3" y1="6" x2="21" y2="6"/>
+                <path d="M16 10a4 4 0 0 1-8 0"/>
+              </svg>
+              أضف للسلة
+            </button>
+          </div>
+          <div class="product-info">
+            <p class="product-category-tag">شنط</p>
+            <h3 class="product-name">حقيبة كلاتش بنقش هندسي عصري</h3>
+            <div class="product-rating">
+              <div class="stars" aria-label="تقييم 5 من 5">★★★★★</div>
+              <span class="rating-count">(55 تقييم)</span>
+            </div>
+            <div class="product-price-row">
+              <span class="product-price">168 ج.م</span>
+              <span class="product-price-old">210 ج.م</span>
+            </div>
+          </div>
+        </article>
+
+      </div>
+
+      <!-- زر عرض الكل -->
+      <div class="section-header" style="margin-top: var(--space-10); margin-bottom: 0;">
+        <a href="#" class="btn btn-secondary" id="view-all-products">
+          عرض جميع المنتجات
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18"><path d="m9 18 6-6-6-6"/></svg>
+        </a>
+      </div>
+    </div>
+  </section>
+
+  <!-- ==================== البنر الترويجي (ديناميكي) ==================== -->
+  <div id="promo-banner-section"></div>
+
+  <!-- ==================== النشرة البريدية (ديناميكية) ==================== -->
+  <div id="newsletter-section"></div>
+
+</main>
+
+<!-- الفوتر الديناميكي — يُبنى بواسطة NasmaStore.initPage() -->
+<div id="nasma-footer"></div>
+
+<!-- ================================================
+     أدوات ثابتة
+     ================================================ -->
+
+<!-- Scroll to Top -->
+<button class="scroll-top" id="scroll-top" aria-label="العودة للأعلى" title="للأعلى">
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+    <polyline points="18 15 12 9 6 15"/>
+  </svg>
+</button>
+
+<!-- JavaScript -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="supabase.js"></script>
+<script src="data.js"></script>
+<script src="store.js"></script>
+
+<script>
+  document.addEventListener('DOMContentLoaded', () => {
+    // تهيئة كاملة: الهيدر + الفوتر + السلة + المفضلة + البحث + الموبايل منيو + scroll-to-top
+    NasmaStore.initPage('home');
+
+    // تحديث محتويات وصورة البانر الرئيسي إذا تم تعديلها من لوحة التحكم
+    const s = NasmaDB.SettingsDB.get();
+    const heroImg = document.getElementById('hero-banner-img');
+    if (heroImg && s.heroImageDataUrl) {
+      heroImg.src = s.heroImageDataUrl;
+    }
+
+    const heroBadge = document.querySelector('.hero-badge');
+    const heroTitle = document.querySelector('.hero-title');
+    const heroDesc = document.querySelector('.hero-desc');
+
+    const defaultBadge = '✦ كولكشن صيف 2025';
+    const defaultTitle = 'أناقة تعبّر <span>عنكِ</span>';
+    const defaultDesc = 'اكتشفي تشكيلة نسما الحصرية من العبايات الفاخرة والشنط العصرية والإكسسوارات الأنيقة. أسلوب يجمع بين الأصالة والمعاصرة.';
+
+    if (heroBadge) {
+      heroBadge.textContent = (s.heroBadge && s.heroBadge.trim()) ? s.heroBadge : defaultBadge;
+    }
+    if (heroTitle) {
+      let titleVal = (s.heroTitle && s.heroTitle.trim()) ? s.heroTitle : defaultTitle;
+      // إذا لم يكن يحتوي العنوان على وسم span، نقوم بتغليف الكلمة الأخيرة بـ span للحفاظ على التنسيق والسطر الجديد واللون الذهبي
+      if (!titleVal.includes('<span') && !titleVal.includes('&lt;span')) {
+        const words = titleVal.split(/\s+/);
+        if (words.length > 1) {
+          const lastWord = words.pop();
+          titleVal = `${words.join(' ')} <span>${lastWord}</span>`;
+        }
+      } else {
+        titleVal = titleVal.replace(/&lt;span&gt;/g, '<span>').replace(/&lt;\/span&gt;/g, '</span>');
+      }
+      heroTitle.innerHTML = titleVal;
+    }
+    if (heroDesc) {
+      heroDesc.textContent = (s.heroDesc && s.heroDesc.trim()) ? s.heroDesc : defaultDesc;
+    }
+
+    // تحديث التصنيفات من قاعدة البيانات
+    const realCats = NasmaDB.CategoriesDB.getAll();
+    if (realCats.length > 0) {
+      const catsGrid = document.querySelector('.categories-grid');
+      if (catsGrid) {
+        catsGrid.innerHTML = realCats.slice(0, 3).map((c, i) => {
+          const count = NasmaDB.ProductsDB.getAll().filter(p => p.categoryId === c.id).length;
+          const imgMap = {
+            'abaya':       'assets/images/cat-abaya.png',
+            'bags':        'assets/images/cat-bags.png',
+            'accessories': 'assets/images/cat-accessories.png'
+          };
+          const imgSrc = imgMap[c.id] || 'assets/images/hero.png';
+          return `
+            <article
+              class="category-card animate-on-scroll animate-delay-${i}"
+              role="button" tabindex="0"
+              aria-label="تصفح ${c.name}"
+              onclick="location.href='products.html?cat=${c.id}'"
+            >
+              <img src="${imgSrc}" alt="تصنيف ${c.name}" loading="lazy">
+              <div class="category-overlay"></div>
+              <div class="category-content">
+                <h3 class="category-name">${c.name}</h3>
+                <p class="category-count">${count} قطعة</p>
+                <span class="category-arrow">
+                  تسوقي الآن
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="m15 18-6-6 6-6"/>
+                  </svg>
+                </span>
+              </div>
+            </article>`;
+        }).join('');
+      }
+    }
+
+    // تحديث شبكة المنتجات بأحدث المنتجات من المخزون
+    const realProducts = NasmaDB.ProductsDB.getAll();
+    const productsGrid = document.querySelector('.products-grid');
+    if (productsGrid) {
+      const activeProds = realProducts.filter(p => p.active).slice(0, 4);
+      if (activeProds.length > 0) {
+        productsGrid.innerHTML = activeProds.map((p, i) => NasmaStore.buildProductCard(p, i)).join('');
+      } else {
+        productsGrid.innerHTML = NasmaStore.buildEmptyState('لم يتم إضافة منتجات بعد — أضيفيها من لوحة التحكم');
+      }
+    }
+
+    // زر عرض كل المنتجات
+    const viewAllBtn = document.getElementById('view-all-products');
+    if (viewAllBtn) viewAllBtn.href = 'products.html';
+
+    // أزرار Hero تشير لأقسام الصفحة
+    const heroShopBtn = document.getElementById('hero-shop-btn');
+    const heroCatsBtn = document.getElementById('hero-cats-btn');
+    if (heroShopBtn) heroShopBtn.href = 'products.html';
+    if (heroCatsBtn) heroCatsBtn.href = 'products.html';
+
+    // بناء البانرات الديناميكية
+    renderDynamicBanners();
+
+    // تنشيط الأنيميشن عند التمرير
+    NasmaStore.initScrollAnimations();
+  });
+
+  /* بناء البنر الترويجي وبانر النشرة البريدية من الإعدادات */
+  function renderDynamicBanners() {
+    const s = NasmaDB.SettingsDB.get();
+
+    // ── البنر الترويجي ──
+    const promoEl = document.getElementById('promo-banner-section');
+    if (promoEl) {
+      if (s.promoBannerEnabled !== false) {
+        // تحويل \n إلى <br> في العنوان
+        const titleHtml = (s.promoTitle || 'نهاية الموسم\nبأسعار لا تُصدَّق')
+          .replace(/\n/g, '<br>');
+        promoEl.innerHTML = `
+          <section class="promo-banner section-padding" id="offers" aria-label="العروض الخاصة">
+            <div class="container">
+              <div class="promo-content animate-on-scroll">
+                <div>
+                  <p class="promo-label">${s.promoLabel || '✦ عرض محدود'}</p>
+                  <h2 class="promo-title">${titleHtml}</h2>
+                  <p class="promo-desc">${s.promoDesc || ''}</p>
+                </div>
+                <div class="promo-cta">
+                  <div class="promo-discount">${s.promoDiscount || '40'}<span>%</span></div>
+                  <a href="${s.promoBtnLink || 'products.html'}" class="btn btn-light">
+                    ${s.promoBtnText || 'تسوقي العروض'}
+                  </a>
+                </div>
+              </div>
+            </div>
+          </section>`;
+      } else {
+        promoEl.innerHTML = '';
+      }
+    }
+
+    // ── النشرة البريدية ──
+    const newsletterEl = document.getElementById('newsletter-section');
+    if (newsletterEl) {
+      if (s.newsletterEnabled !== false) {
+        newsletterEl.innerHTML = `
+          <section class="newsletter section-padding" id="contact" aria-label="النشرة البريدية">
+            <div class="container">
+              <div class="newsletter-card animate-on-scroll">
+                <div class="newsletter-icon">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7">
+                    <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/>
+                    <polyline points="22,6 12,13 2,6"/>
+                  </svg>
+                </div>
+                <h2 class="newsletter-title">${s.newsletterTitle || 'كوني أول من يعلم'}</h2>
+                <p class="newsletter-desc">${s.newsletterDesc || ''}</p>
+                <form class="newsletter-form" id="newsletter-form" novalidate>
+                  <input id="newsletter-email" class="newsletter-input" type="email"
+                    placeholder="بريدكِ الإلكتروني" required autocomplete="email">
+                  <button type="submit" class="btn btn-primary" id="newsletter-submit">اشتركي</button>
+                </form>
+              </div>
+            </div>
+          </section>`;
+        // تفعيل حدث النموذج
+        const form = document.getElementById('newsletter-form');
+        if (form) {
+          form.addEventListener('submit', (e) => {
+            e.preventDefault();
+            const email = document.getElementById('newsletter-email').value.trim();
+            if (email) {
+              NasmaStore.showToast('شكراً! تم تسجيل بريدكِ الإلكتروني بنجاح 💌');
+              document.getElementById('newsletter-email').value = '';
+            }
+          });
+        }
+      } else {
+        newsletterEl.innerHTML = '';
+      }
+    }
+  }
+</script>
+
+<!-- Service Worker Registration -->
+<script>
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+      navigator.serviceWorker.register('/sw.js').catch(() => {});
+    });
+  }
+</script>
+
+</body>
+</html>

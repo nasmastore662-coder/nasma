@@ -1,0 +1,761 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="تصفحي جميع منتجات نسما — عبايات، شنط، إكسسوارات نسائية فاخرة">
+  <meta name="theme-color" content="#C4A882">
+  <title>المنتجات — نسما</title>
+
+  <!-- Web App Manifest -->
+  <link rel="manifest" href="manifest.json">
+
+  <!-- DNS Prefetch & Preconnect -->
+  <link rel="dns-prefetch" href="https://fonts.googleapis.com">
+  <link rel="dns-prefetch" href="https://fonts.gstatic.com">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+
+  <!-- Google Fonts -->
+  <link href="https://fonts.googleapis.com/css2?family=Amiri:wght@400;700&family=Tajawal:wght@300;400;500;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+  <style>
+    /* ——— تخطيط الصفحة ——— */
+    .products-page-layout {
+      display: grid;
+      grid-template-columns: 260px 1fr;
+      gap: var(--space-8);
+      align-items: start;
+    }
+
+    /* ——— شريط الفلترة الجانبي ——— */
+    .filters-sidebar {
+      background: var(--color-card);
+      border-radius: var(--radius-xl);
+      padding: var(--space-6);
+      border: 1px solid var(--color-border);
+      position: sticky;
+      top: calc(var(--nav-height) + 16px);
+      max-height: calc(100vh - var(--nav-height) - 32px);
+      overflow-y: auto;
+    }
+
+    .filters-sidebar::-webkit-scrollbar { width: 3px; }
+    .filters-sidebar::-webkit-scrollbar-thumb { background: var(--color-primary-light); border-radius: 9999px; }
+
+    .filter-group {
+      margin-bottom: var(--space-6);
+      padding-bottom: var(--space-6);
+      border-bottom: 1px solid var(--color-border-light);
+    }
+    .filter-group:last-child { border-bottom: none; margin-bottom: 0; }
+
+    .filter-group-title {
+      font-size: var(--text-sm);
+      font-weight: 700;
+      color: var(--color-text);
+      margin-bottom: var(--space-4);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .filter-option {
+      display: flex;
+      align-items: center;
+      gap: var(--space-3);
+      padding: var(--space-2) 0;
+      cursor: pointer;
+      font-size: var(--text-sm);
+      color: var(--color-text-secondary);
+      transition: color var(--transition-base);
+      user-select: none;
+    }
+    .filter-option:hover { color: var(--color-primary-dark); }
+
+    .filter-option input[type="checkbox"],
+    .filter-option input[type="radio"] {
+      width: 16px;
+      height: 16px;
+      accent-color: var(--color-primary);
+      cursor: pointer;
+    }
+
+    /* سعر slider */
+    .price-range-display {
+      display: flex;
+      justify-content: space-between;
+      font-size: var(--text-sm);
+      font-weight: 600;
+      color: var(--color-primary-dark);
+      margin-bottom: var(--space-3);
+    }
+
+    .price-slider {
+      width: 100%;
+      accent-color: var(--color-primary);
+      cursor: pointer;
+    }
+
+    /* ——— شريط الأدوات ——— */
+    .products-toolbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: var(--space-6);
+      gap: var(--space-4);
+      flex-wrap: wrap;
+    }
+
+    .products-count {
+      font-size: var(--text-sm);
+      color: var(--color-text-secondary);
+    }
+    .products-count strong { color: var(--color-text); }
+
+    .toolbar-controls {
+      display: flex;
+      align-items: center;
+      gap: var(--space-3);
+    }
+
+    .sort-select {
+      padding: var(--space-2) var(--space-4);
+      border: 1.5px solid var(--color-border);
+      border-radius: var(--radius-full);
+      font-family: var(--font-primary);
+      font-size: var(--text-sm);
+      color: var(--color-text);
+      background: var(--color-card);
+      outline: none;
+      cursor: pointer;
+      transition: border-color var(--transition-base);
+    }
+    .sort-select:focus { border-color: var(--color-primary); }
+
+    .view-toggle {
+      display: flex;
+      gap: var(--space-1);
+      background: var(--color-bg-alt);
+      padding: var(--space-1);
+      border-radius: var(--radius-full);
+    }
+
+    .view-btn {
+      width: 34px;
+      height: 34px;
+      border-radius: var(--radius-full);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--color-text-light);
+      transition: all var(--transition-base);
+    }
+    .view-btn.active {
+      background: var(--color-card);
+      color: var(--color-primary-dark);
+      box-shadow: var(--shadow-sm);
+    }
+    .view-btn svg { width: 16px; height: 16px; }
+
+    /* ——— Grid / List ——— */
+    .products-grid.list-view {
+      grid-template-columns: 1fr;
+    }
+    .products-grid.list-view .product-card {
+      display: grid;
+      grid-template-columns: 200px 1fr;
+    }
+    .products-grid.list-view .product-image-wrapper {
+      aspect-ratio: auto;
+      height: 200px;
+    }
+    .products-grid.list-view .product-info {
+      padding: var(--space-6);
+    }
+
+    /* Pagination */
+    .pagination {
+      display: flex;
+      justify-content: center;
+      gap: var(--space-2);
+      margin-top: var(--space-12);
+      flex-wrap: wrap;
+    }
+
+    .page-btn {
+      width: 40px;
+      height: 40px;
+      border-radius: var(--radius-full);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: var(--text-sm);
+      font-weight: 600;
+      color: var(--color-text-secondary);
+      background: var(--color-card);
+      border: 1.5px solid var(--color-border);
+      cursor: pointer;
+      transition: all var(--transition-base);
+    }
+    .page-btn:hover { border-color: var(--color-primary); color: var(--color-primary-dark); }
+    .page-btn.active { background: var(--color-primary); color: #fff; border-color: var(--color-primary); }
+    .page-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+    /* فلتر موبايل */
+    .filter-toggle-btn {
+      display: none;
+    }
+    .mobile-filter-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.4);
+      z-index: 200;
+      backdrop-filter: blur(2px);
+    }
+    .mobile-filter-overlay.open { display: block; }
+    .mobile-filters-panel {
+      position: fixed;
+      bottom: -100%;
+      right: 0;
+      left: 0;
+      background: var(--color-card);
+      border-radius: var(--radius-2xl) var(--radius-2xl) 0 0;
+      z-index: 210;
+      max-height: 85vh;
+      overflow-y: auto;
+      padding: var(--space-6);
+      transition: bottom var(--transition-slow);
+    }
+    .mobile-filters-panel.open { bottom: 0; }
+
+    /* Breadcrumb */
+    .page-breadcrumb {
+      padding: var(--space-4) 0 var(--space-2);
+      border-bottom: 1px solid var(--color-border-light);
+      margin-bottom: var(--space-8);
+    }
+
+    /* active filter chips */
+    .active-filters {
+      display: flex;
+      gap: var(--space-2);
+      flex-wrap: wrap;
+      margin-bottom: var(--space-4);
+    }
+    .filter-chip {
+      display: inline-flex;
+      align-items: center;
+      gap: var(--space-2);
+      padding: var(--space-1) var(--space-3);
+      background: var(--color-secondary);
+      color: var(--color-primary-dark);
+      border-radius: var(--radius-full);
+      font-size: var(--text-xs);
+      font-weight: 600;
+      cursor: pointer;
+      transition: all var(--transition-base);
+    }
+    .filter-chip:hover { background: var(--color-primary); color: #fff; }
+    .filter-chip svg { width: 12px; height: 12px; }
+
+    @media (max-width: 1024px) {
+      .products-page-layout {
+        grid-template-columns: 1fr;
+      }
+      .filters-sidebar {
+        display: none;
+      }
+      .filter-toggle-btn { display: flex; }
+    }
+    @media (max-width: 640px) {
+      .products-grid:not(.list-view) {
+        grid-template-columns: repeat(2, 1fr);
+        gap: var(--space-3);
+      }
+    }
+  </style>
+</head>
+<body>
+
+<!-- الهيدر (يُبنى ديناميكياً) -->
+<div id="nasma-header"></div>
+
+<main>
+  <section class="section-padding" style="padding-top: var(--space-8);">
+    <div class="container">
+
+      <!-- Breadcrumb -->
+      <nav class="page-breadcrumb breadcrumb" aria-label="مسار التنقل">
+        <a href="index.html" class="breadcrumb-item">الرئيسية</a>
+        <span class="breadcrumb-sep">›</span>
+        <span class="breadcrumb-current" id="page-breadcrumb-current">جميع المنتجات</span>
+      </nav>
+
+      <!-- عنوان الصفحة -->
+      <div class="section-header" style="text-align:right;margin-bottom:var(--space-8);">
+        <p class="section-label" style="justify-content:flex-start;" id="page-cat-label">تصفح المنتجات</p>
+        <h1 class="section-title" style="text-align:right;" id="page-title">جميع المنتجات</h1>
+      </div>
+
+      <!-- Active Filters -->
+      <div class="active-filters" id="active-filters"></div>
+
+      <!-- شريط الأدوات -->
+      <div class="products-toolbar">
+        <div style="display:flex;align-items:center;gap:var(--space-3);">
+          <button class="btn btn-secondary filter-toggle-btn" id="filter-toggle-btn" aria-label="الفلترة">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
+              <line x1="4" y1="6" x2="20" y2="6"/><line x1="8" y1="12" x2="16" y2="12"/><line x1="11" y1="18" x2="13" y2="18"/>
+            </svg>
+            فلترة
+          </button>
+          <p class="products-count" id="products-count">جارٍ التحميل...</p>
+        </div>
+        <div class="toolbar-controls">
+          <select class="sort-select" id="sort-select" aria-label="ترتيب المنتجات">
+            <option value="newest">الأحدث أولاً</option>
+            <option value="price_asc">الأقل سعراً</option>
+            <option value="price_desc">الأعلى سعراً</option>
+            <option value="rating">الأعلى تقييماً</option>
+            <option value="popular">الأكثر شعبية</option>
+          </select>
+          <div class="view-toggle" role="group" aria-label="طريقة العرض">
+            <button class="view-btn active" id="grid-view-btn" aria-label="عرض شبكي" title="شبكي">
+              <svg viewBox="0 0 24 24" fill="currentColor"><rect x="3" y="3" width="8" height="8" rx="1"/><rect x="13" y="3" width="8" height="8" rx="1"/><rect x="3" y="13" width="8" height="8" rx="1"/><rect x="13" y="13" width="8" height="8" rx="1"/></svg>
+            </button>
+            <button class="view-btn" id="list-view-btn" aria-label="عرض قائمة" title="قائمة">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Layout الرئيسي -->
+      <div class="products-page-layout">
+
+        <!-- Sidebar الفلترة -->
+        <aside class="filters-sidebar" id="filters-sidebar" aria-label="خيارات التصفية">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:var(--space-5);">
+            <h2 style="font-size:var(--text-base);font-weight:700;">تصفية النتائج</h2>
+            <button class="btn btn-ghost" id="clear-filters-btn" style="font-size:var(--text-xs);padding:var(--space-1) var(--space-3);">مسح الكل</button>
+          </div>
+
+          <!-- التصنيف -->
+          <div class="filter-group">
+            <p class="filter-group-title">التصنيف</p>
+            <div id="category-filters">
+              <label class="filter-option">
+                <input type="radio" name="cat-filter" value="" checked> جميع التصنيفات
+              </label>
+            </div>
+          </div>
+
+          <!-- نطاق السعر -->
+          <div class="filter-group">
+            <p class="filter-group-title">السعر</p>
+            <div class="price-range-display">
+              <span id="price-min-display">0 ج.م</span>
+              <span id="price-max-display">1000 ج.م</span>
+            </div>
+            <input type="range" class="price-slider" id="price-max-slider" min="0" max="5000" value="5000" step="50">
+          </div>
+
+          <!-- التقييم -->
+          <div class="filter-group">
+            <p class="filter-group-title">التقييم</p>
+            <label class="filter-option"><input type="radio" name="rating-filter" value=""> الكل</label>
+            <label class="filter-option"><input type="radio" name="rating-filter" value="4"> ★★★★ فأكثر</label>
+            <label class="filter-option"><input type="radio" name="rating-filter" value="3"> ★★★ فأكثر</label>
+          </div>
+
+          <!-- الشارات -->
+          <div class="filter-group">
+            <p class="filter-group-title">الحالة</p>
+            <label class="filter-option"><input type="checkbox" id="badge-new"> جديد</label>
+            <label class="filter-option"><input type="checkbox" id="badge-sale"> تخفيضات</label>
+          </div>
+        </aside>
+
+        <!-- المنتجات -->
+        <div>
+          <div class="products-grid" id="products-grid" style="grid-template-columns:repeat(3,1fr);">
+            <!-- تُبنى ديناميكياً -->
+          </div>
+          <!-- Pagination -->
+          <div class="pagination" id="pagination"></div>
+        </div>
+      </div>
+    </div>
+  </section>
+</main>
+
+<!-- Scroll to Top -->
+<button class="scroll-top" id="scroll-top" aria-label="للأعلى">
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="18 15 12 9 6 15"/></svg>
+</button>
+
+<!-- موبايل — لوحة الفلترة -->
+<div class="mobile-filter-overlay" id="mobile-filter-overlay"></div>
+<div class="mobile-filters-panel" id="mobile-filters-panel">
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:var(--space-5);">
+    <h2 style="font-size:var(--text-base);font-weight:700;">تصفية النتائج</h2>
+    <button id="mobile-filters-close" aria-label="إغلاق">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6 6 18M6 6l12 12"/></svg>
+    </button>
+  </div>
+  <div id="mobile-filters-content"></div>
+  <div style="display:flex;gap:var(--space-3);margin-top:var(--space-5);">
+    <button class="btn btn-secondary" id="mobile-clear-btn" style="flex:1;">مسح</button>
+    <button class="btn btn-primary" id="mobile-apply-btn" style="flex:1;">عرض النتائج</button>
+  </div>
+</div>
+
+<div id="nasma-footer"></div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="supabase.js"></script>
+<script src="data.js"></script>
+<script src="store.js"></script>
+<script>
+'use strict';
+
+const ITEMS_PER_PAGE = 12;
+let currentPage  = 1;
+let currentView  = 'grid';
+let activeFilters = {
+  categoryId: '',
+  maxPrice:   5000,
+  minRating:  0,
+  sortBy:     'newest',
+  badgeNew:   false,
+  badgeSale:  false,
+};
+
+/* --- تهيئة الصفحة --- */
+document.addEventListener('DOMContentLoaded', () => {
+  NasmaStore.initPage('products');
+
+  // قراءة params من URL
+  const params = new URLSearchParams(location.search);
+  if (params.get('cat')) {
+    const slug = params.get('cat');
+    const cats = NasmaDB.CategoriesDB.getAll();
+    const cat  = cats.find(c => c.slug === slug || c.id === slug);
+    if (cat) {
+      activeFilters.categoryId = cat.id;
+      document.getElementById('page-title').textContent = cat.name;
+      document.getElementById('page-breadcrumb-current').textContent = cat.name;
+      document.getElementById('page-cat-label').textContent = 'تصنيف';
+    }
+  }
+
+  buildCategoryFilters();
+  renderProducts();
+  bindFilterEvents();
+  bindToolbarEvents();
+  bindMobileFilterEvents();
+});
+
+/* --- بناء خيارات التصنيف --- */
+function buildCategoryFilters() {
+  const cats = NasmaDB.CategoriesDB.getAll();
+  const container = document.getElementById('category-filters');
+  if (!container) return;
+  container.innerHTML = `<label class="filter-option">
+    <input type="radio" name="cat-filter" value="" ${!activeFilters.categoryId ? 'checked' : ''}> جميع التصنيفات
+  </label>` + cats.map(cat => `
+  <label class="filter-option">
+    <input type="radio" name="cat-filter" value="${cat.id}" ${activeFilters.categoryId === cat.id ? 'checked' : ''}>
+    ${cat.icon || ''} ${cat.name}
+  </label>`).join('');
+}
+
+/* --- عرض المنتجات --- */
+function renderProducts() {
+  let products = NasmaDB.ProductsDB.filter({
+    categoryId: activeFilters.categoryId || undefined,
+    maxPrice:   activeFilters.maxPrice,
+    minRating:  activeFilters.minRating || undefined,
+    sortBy:     activeFilters.sortBy,
+  });
+
+  if (activeFilters.badgeNew)  products = products.filter(p => p.badge === 'new');
+  if (activeFilters.badgeSale) products = products.filter(p => p.badge === 'sale' || p.priceOld > p.price);
+
+  const total = products.length;
+  const totalPages = Math.ceil(total / ITEMS_PER_PAGE);
+  const start = (currentPage - 1) * ITEMS_PER_PAGE;
+  const paged = products.slice(start, start + ITEMS_PER_PAGE);
+
+  // عدد المنتجات
+  document.getElementById('products-count').innerHTML =
+    `<strong>${total}</strong> منتج`;
+
+  // Grid
+  const grid = document.getElementById('products-grid');
+  if (!paged.length) {
+    grid.innerHTML = NasmaStore.buildEmptyState(
+      NasmaDB.ProductsDB.getAll().length === 0
+        ? 'لم يتم إضافة منتجات بعد — يمكن إضافتها من لوحة التحكم'
+        : 'لا توجد منتجات تطابق الفلترة المختارة'
+    );
+  } else {
+    grid.innerHTML = paged.map((p, i) => NasmaStore.buildProductCard(p, i)).join('');
+  }
+
+  if (currentView === 'grid') {
+    grid.style.gridTemplateColumns = 'repeat(3,1fr)';
+    grid.classList.remove('list-view');
+  } else {
+    grid.classList.add('list-view');
+  }
+
+  renderPagination(totalPages);
+  NasmaStore.initScrollAnimations();
+  renderActiveFilters();
+}
+
+/* --- Pagination --- */
+function renderPagination(totalPages) {
+  const el = document.getElementById('pagination');
+  if (!el || totalPages <= 1) { if (el) el.innerHTML = ''; return; }
+  let html = `<button class="page-btn" ${currentPage===1?'disabled':''} onclick="goPage(${currentPage-1})">‹</button>`;
+  for (let i = 1; i <= totalPages; i++) {
+    html += `<button class="page-btn${i===currentPage?' active':''}" onclick="goPage(${i})">${i}</button>`;
+  }
+  html += `<button class="page-btn" ${currentPage===totalPages?'disabled':''} onclick="goPage(${currentPage+1})">›</button>`;
+  el.innerHTML = html;
+}
+
+function goPage(page) {
+  currentPage = page;
+  renderProducts();
+  window.scrollTo({ top: 200, behavior: 'smooth' });
+}
+
+/* --- شارات الفلترة النشطة --- */
+function renderActiveFilters() {
+  const container = document.getElementById('active-filters');
+  if (!container) return;
+  const chips = [];
+
+  if (activeFilters.categoryId) {
+    const cat = NasmaDB.CategoriesDB.getById(activeFilters.categoryId);
+    if (cat) chips.push({ label: cat.name, action: () => { activeFilters.categoryId = ''; currentPage=1; renderProducts(); buildCategoryFilters(); } });
+  }
+  if (activeFilters.maxPrice < 5000) {
+    chips.push({ label: `حتى ${NasmaDB.formatPrice(activeFilters.maxPrice)}`, action: () => { activeFilters.maxPrice=5000; document.querySelectorAll('#price-max-slider').forEach(s => s.value=5000); document.querySelectorAll('#price-max-display').forEach(d => d.textContent='5000 ج.م'); currentPage=1; renderProducts(); } });
+  }
+  if (activeFilters.minRating) {
+    chips.push({ label: `${activeFilters.minRating}+ نجوم`, action: () => { activeFilters.minRating=0; currentPage=1; renderProducts(); } });
+  }
+  if (activeFilters.badgeNew)  chips.push({ label: 'جديد',       action: () => { activeFilters.badgeNew=false;  currentPage=1; renderProducts(); } });
+  if (activeFilters.badgeSale) chips.push({ label: 'تخفيضات',    action: () => { activeFilters.badgeSale=false; currentPage=1; renderProducts(); } });
+
+  container.innerHTML = chips.map(c => `
+    <span class="filter-chip">
+      ${c.label}
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6 6 18M6 6l12 12"/></svg>
+    </span>`).join('');
+
+  // ربط أحداث مباشرة لـ chips
+  container.querySelectorAll('.filter-chip').forEach((chip, i) => {
+    chip.addEventListener('click', chips[i].action);
+  });
+}
+
+/* --- ربط أحداث الفلترة --- */
+function bindFilterEvents() {
+  // استخدام Event Delegation للتعامل مع الفلترة في الديسكتوب والموبايل معاً دون تكرار أو فقدان الأحداث
+
+  // حدث السلايدر (السعر)
+  document.addEventListener('input', e => {
+    if (e.target.id === 'price-max-slider') {
+      const val = parseInt(e.target.value);
+      activeFilters.maxPrice = val;
+      
+      // تحديث رقم العرض في جميع النسخ (ديسكتوب وموبايل)
+      document.querySelectorAll('#price-max-display').forEach(el => {
+        el.textContent = `${val} ج.م`;
+      });
+      
+      // مزامنة قيمة السلايدر الآخر
+      document.querySelectorAll('#price-max-slider').forEach(slider => {
+        if (slider !== e.target) slider.value = val;
+      });
+
+      currentPage = 1;
+      renderProducts();
+    }
+  });
+
+  // حدث التغيير لمدخلات الراديو والتشيك بوكس (التصنيفات، التقييمات، الشارات)
+  document.addEventListener('change', e => {
+    // فلتر التصنيف
+    if (e.target.name === 'cat-filter') {
+      activeFilters.categoryId = e.target.value;
+      
+      // مزامنة حالة الراديو الآخر
+      document.querySelectorAll(`input[name="cat-filter"]`).forEach(radio => {
+        radio.checked = (radio.value === e.target.value);
+      });
+
+      currentPage = 1;
+      renderProducts();
+    }
+
+    // فلتر التقييم
+    if (e.target.name === 'rating-filter') {
+      activeFilters.minRating = parseFloat(e.target.value) || 0;
+      
+      // مزامنة حالة الراديو الآخر
+      document.querySelectorAll(`input[name="rating-filter"]`).forEach(radio => {
+        radio.checked = (radio.value === e.target.value);
+      });
+
+      currentPage = 1;
+      renderProducts();
+    }
+
+    // فلتر الشارات (جديد)
+    if (e.target.id === 'badge-new') {
+      activeFilters.badgeNew = e.target.checked;
+      
+      // مزامنة الشارة الأخرى
+      document.querySelectorAll('#badge-new').forEach(cb => {
+        cb.checked = e.target.checked;
+      });
+
+      currentPage = 1;
+      renderProducts();
+    }
+
+    // فلتر الشارات (تخفيضات)
+    if (e.target.id === 'badge-sale') {
+      activeFilters.badgeSale = e.target.checked;
+      
+      // مزامنة الشارة الأخرى
+      document.querySelectorAll('#badge-sale').forEach(cb => {
+        cb.checked = e.target.checked;
+      });
+
+      currentPage = 1;
+      renderProducts();
+    }
+  });
+
+  // حدث زر مسح الكل
+  document.addEventListener('click', e => {
+    if (e.target.id === 'clear-filters-btn' || e.target.closest('#clear-filters-btn')) {
+      clearFilters();
+    }
+  });
+}
+
+function clearFilters() {
+  activeFilters = { categoryId:'', maxPrice:5000, minRating:0, sortBy:'newest', badgeNew:false, badgeSale:false };
+  
+  // تحديث جميع المدخلات في الدوم (ديسكتوب وموبايل)
+  document.querySelectorAll('#price-max-slider').forEach(slider => slider.value = 5000);
+  document.querySelectorAll('#price-max-display').forEach(disp => disp.textContent = '5000 ج.م');
+  
+  document.querySelectorAll('input[name="cat-filter"]').forEach(radio => {
+    radio.checked = (radio.value === '');
+  });
+  
+  document.querySelectorAll('input[name="rating-filter"]').forEach(radio => {
+    radio.checked = (radio.value === '');
+  });
+  
+  document.querySelectorAll('#badge-new').forEach(cb => cb.checked = false);
+  document.querySelectorAll('#badge-sale').forEach(cb => cb.checked = false);
+  
+  currentPage = 1;
+  renderProducts();
+}
+
+/* --- شريط الأدوات --- */
+function bindToolbarEvents() {
+  document.getElementById('sort-select')?.addEventListener('change', e => {
+    activeFilters.sortBy = e.target.value;
+    currentPage = 1;
+    renderProducts();
+  });
+
+  document.getElementById('grid-view-btn')?.addEventListener('click', () => {
+    currentView = 'grid';
+    document.getElementById('grid-view-btn').classList.add('active');
+    document.getElementById('list-view-btn').classList.remove('active');
+    renderProducts();
+  });
+
+  document.getElementById('list-view-btn')?.addEventListener('click', () => {
+    currentView = 'list';
+    document.getElementById('list-view-btn').classList.add('active');
+    document.getElementById('grid-view-btn').classList.remove('active');
+    renderProducts();
+  });
+}
+
+/* --- فلترة الموبايل --- */
+function bindMobileFilterEvents() {
+  const btn     = document.getElementById('filter-toggle-btn');
+  const overlay = document.getElementById('mobile-filter-overlay');
+  const panel   = document.getElementById('mobile-filters-panel');
+  const closeBtn= document.getElementById('mobile-filters-close');
+
+  const openPanel = () => {
+    // نسخ محتوى الفلترة للموبايل
+    const mobileContent = document.getElementById('mobile-filters-content');
+    mobileContent.innerHTML = document.getElementById('filters-sidebar').innerHTML;
+    
+    // مزامنة حالة المدخلات المنسوخة مع الحالة الحالية لـ activeFilters فور الفتح
+    const mobileSlider = mobileContent.querySelector('#price-max-slider');
+    if (mobileSlider) mobileSlider.value = activeFilters.maxPrice;
+    
+    const mobilePriceDisplay = mobileContent.querySelector('#price-max-display');
+    if (mobilePriceDisplay) mobilePriceDisplay.textContent = `${activeFilters.maxPrice} ج.م`;
+
+    const mobileCatRadio = mobileContent.querySelector(`input[name="cat-filter"][value="${activeFilters.categoryId}"]`);
+    if (mobileCatRadio) mobileCatRadio.checked = true;
+
+    const mobileRatingRadio = mobileContent.querySelector(`input[name="rating-filter"][value="${activeFilters.minRating || ''}"]`);
+    if (mobileRatingRadio) mobileRatingRadio.checked = true;
+
+    const mobileBadgeNew = mobileContent.querySelector('#badge-new');
+    if (mobileBadgeNew) mobileBadgeNew.checked = activeFilters.badgeNew;
+    
+    const mobileBadgeSale = mobileContent.querySelector('#badge-sale');
+    if (mobileBadgeSale) mobileBadgeSale.checked = activeFilters.badgeSale;
+
+    overlay.classList.add('open');
+    panel.classList.add('open');
+    document.body.style.overflow = 'hidden';
+  };
+  const closePanel = () => {
+    overlay.classList.remove('open');
+    panel.classList.remove('open');
+    document.body.style.overflow = '';
+  };
+
+  btn?.addEventListener('click', openPanel);
+  closeBtn?.addEventListener('click', closePanel);
+  overlay?.addEventListener('click', closePanel);
+  document.getElementById('mobile-apply-btn')?.addEventListener('click', closePanel);
+  document.getElementById('mobile-clear-btn')?.addEventListener('click', () => { clearFilters(); closePanel(); });
+}
+</script>
+
+<!-- Service Worker Registration -->
+<script>
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+      navigator.serviceWorker.register('/sw.js').catch(() => {});
+    });
+  }
+</script>
+
+</body>
+</html>

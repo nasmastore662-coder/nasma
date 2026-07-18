@@ -1,0 +1,22 @@
+{
+  "name": "نسما ستور",
+  "short_name": "نسما",
+  "description": "متجر متخصص في العبايات والشنط والإكسسوارات النسائية الراقية",
+  "start_url": "/index.html",
+  "display": "standalone",
+  "background_color": "#FAF8F5",
+  "theme_color": "#C4A882",
+  "lang": "ar",
+  "dir": "rtl",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "assets/images/hero.webp",
+      "sizes": "512x512",
+      "type": "image/webp",
+      "purpose": "any maskable"
+    }
+  ],
+  "categories": ["shopping", "lifestyle"],
+  "screenshots": []
+}

@@ -1,0 +1,858 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#C4A882">
+  <title>تفاصيل المنتج — نسما</title>
+
+  <!-- Web App Manifest -->
+  <link rel="manifest" href="manifest.json">
+
+  <!-- DNS Prefetch & Preconnect -->
+  <link rel="dns-prefetch" href="https://fonts.googleapis.com">
+  <link rel="dns-prefetch" href="https://fonts.gstatic.com">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+
+  <!-- Google Fonts -->
+  <link href="https://fonts.googleapis.com/css2?family=Amiri:wght@400;700&family=Tajawal:wght@300;400;500;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+  <style>
+    .product-detail-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: var(--space-12);
+      align-items: start;
+    }
+
+    /* ——— معرض الصور ——— */
+    .product-gallery {
+      position: sticky;
+      top: calc(var(--nav-height) + 16px);
+    }
+
+    .gallery-main {
+      width: 100%;
+      aspect-ratio: 3/4;
+      border-radius: var(--radius-2xl);
+      overflow: hidden;
+      background: var(--color-bg-alt);
+      cursor: zoom-in;
+      margin-bottom: var(--space-4);
+      position: relative;
+    }
+
+    .gallery-main img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      transition: transform 0.4s ease;
+    }
+
+    .gallery-main:hover img { transform: scale(1.04); }
+
+    .gallery-thumbs {
+      display: flex;
+      gap: var(--space-3);
+      flex-wrap: wrap;
+    }
+
+    .gallery-thumb {
+      width: 72px;
+      height: 72px;
+      border-radius: var(--radius-lg);
+      overflow: hidden;
+      cursor: pointer;
+      border: 2px solid transparent;
+      transition: border-color var(--transition-base), transform var(--transition-base);
+      flex-shrink: 0;
+    }
+
+    .gallery-thumb.active { border-color: var(--color-primary); }
+    .gallery-thumb:hover  { transform: scale(1.05); }
+
+    .gallery-thumb img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    .gallery-placeholder {
+      width: 100%;
+      height: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: linear-gradient(135deg, var(--color-bg-alt) 0%, var(--color-border) 100%);
+    }
+
+    /* ——— معلومات المنتج ——— */
+    .product-detail-info {
+      display: flex;
+      flex-direction: column;
+      gap: var(--space-6);
+    }
+
+    .product-detail-category {
+      font-size: var(--text-sm);
+      font-weight: 600;
+      color: var(--color-primary-dark);
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+    }
+
+    .product-detail-name {
+      font-family: var(--font-display);
+      font-size: var(--text-3xl);
+      font-weight: 700;
+      color: var(--color-text);
+      line-height: 1.3;
+    }
+
+    .product-detail-rating {
+      display: flex;
+      align-items: center;
+      gap: var(--space-3);
+    }
+
+    .product-detail-price-row {
+      display: flex;
+      align-items: baseline;
+      gap: var(--space-3);
+      padding: var(--space-5) 0;
+      border-top: 1px solid var(--color-border-light);
+      border-bottom: 1px solid var(--color-border-light);
+    }
+
+    .product-detail-price {
+      font-family: var(--font-display);
+      font-size: var(--text-4xl);
+      font-weight: 700;
+      color: var(--color-primary-dark);
+    }
+
+    .product-detail-price-old {
+      font-size: var(--text-xl);
+      color: var(--color-text-light);
+      text-decoration: line-through;
+    }
+
+    .discount-badge {
+      background: #FEE2E2;
+      color: #EF4444;
+      font-size: var(--text-sm);
+      font-weight: 700;
+      padding: var(--space-1) var(--space-3);
+      border-radius: var(--radius-full);
+    }
+
+    /* خيارات */
+    .option-group {
+      display: flex;
+      flex-direction: column;
+      gap: var(--space-3);
+    }
+
+    .option-label {
+      font-size: var(--text-sm);
+      font-weight: 700;
+      color: var(--color-text);
+      display: flex;
+      align-items: center;
+      gap: var(--space-2);
+    }
+
+    .option-selected {
+      font-weight: 400;
+      color: var(--color-primary-dark);
+    }
+
+    .option-chips {
+      display: flex;
+      gap: var(--space-2);
+      flex-wrap: wrap;
+    }
+
+    .option-chip {
+      padding: var(--space-2) var(--space-4);
+      border: 1.5px solid var(--color-border);
+      border-radius: var(--radius-full);
+      font-size: var(--text-sm);
+      font-weight: 500;
+      color: var(--color-text-secondary);
+      cursor: pointer;
+      transition: all var(--transition-base);
+      user-select: none;
+    }
+
+    .option-chip:hover { border-color: var(--color-primary); color: var(--color-primary-dark); }
+    .option-chip.selected { background: var(--color-primary); color: #fff; border-color: var(--color-primary); }
+
+    /* الكمية */
+    .qty-control {
+      display: flex;
+      align-items: center;
+      gap: 0;
+      border: 1.5px solid var(--color-border);
+      border-radius: var(--radius-full);
+      overflow: hidden;
+      width: fit-content;
+    }
+
+    .qty-btn {
+      width: 40px;
+      height: 40px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: var(--color-bg-alt);
+      font-size: var(--text-lg);
+      font-weight: 700;
+      color: var(--color-text-secondary);
+      cursor: pointer;
+      transition: all var(--transition-base);
+      border: none;
+      font-family: var(--font-primary);
+    }
+
+    .qty-btn:hover { background: var(--color-secondary); color: var(--color-primary-dark); }
+    .qty-display {
+      width: 48px;
+      text-align: center;
+      font-weight: 700;
+      font-size: var(--text-base);
+      border: none;
+      background: transparent;
+      font-family: var(--font-primary);
+    }
+
+    /* أزرار الإجراء */
+    .detail-actions {
+      display: flex;
+      gap: var(--space-3);
+    }
+
+    .detail-actions .btn-primary {
+      flex: 1;
+      justify-content: center;
+      font-size: var(--text-base);
+      padding: var(--space-4) var(--space-6);
+    }
+
+    .wishlist-detail-btn {
+      width: 52px;
+      height: 52px;
+      border-radius: var(--radius-full);
+      border: 1.5px solid var(--color-border);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: all var(--transition-base);
+      flex-shrink: 0;
+    }
+
+    .wishlist-detail-btn:hover, .wishlist-detail-btn.active {
+      border-color: var(--color-primary);
+      background: rgba(196,168,130,0.08);
+    }
+
+    .wishlist-detail-btn svg { width: 22px; height: 22px; }
+
+    /* معلومات الشحن */
+    .shipping-info {
+      background: var(--color-bg-alt);
+      border-radius: var(--radius-xl);
+      padding: var(--space-5);
+      display: flex;
+      flex-direction: column;
+      gap: var(--space-3);
+    }
+
+    .shipping-item {
+      display: flex;
+      align-items: center;
+      gap: var(--space-3);
+      font-size: var(--text-sm);
+      color: var(--color-text-secondary);
+    }
+
+    .shipping-item svg { color: var(--color-primary-dark); width: 18px; height: 18px; flex-shrink: 0; }
+
+    /* التبويبات */
+    .detail-tabs {
+      border-bottom: 1px solid var(--color-border);
+      display: flex;
+      gap: 0;
+      margin-bottom: var(--space-8);
+    }
+
+    .detail-tab {
+      padding: var(--space-4) var(--space-6);
+      font-size: var(--text-base);
+      font-weight: 600;
+      color: var(--color-text-light);
+      cursor: pointer;
+      border-bottom: 2px solid transparent;
+      margin-bottom: -1px;
+      transition: all var(--transition-base);
+      white-space: nowrap;
+    }
+
+    .detail-tab.active {
+      color: var(--color-primary-dark);
+      border-bottom-color: var(--color-primary);
+    }
+
+    .detail-tab:hover { color: var(--color-primary-dark); }
+
+    .tab-panel { display: none; }
+    .tab-panel.active { display: block; }
+
+    .tab-panel p {
+      font-size: var(--text-base);
+      color: var(--color-text-secondary);
+      line-height: 1.9;
+    }
+
+    /* Sticky زر */
+    .sticky-add-btn {
+      position: fixed;
+      bottom: 0;
+      right: 0;
+      left: 0;
+      background: rgba(250,248,245,0.92);
+      backdrop-filter: blur(16px);
+      border-top: 1px solid var(--color-border);
+      padding: var(--space-4) var(--space-6);
+      z-index: 90;
+      display: none;
+      align-items: center;
+      justify-content: space-between;
+      gap: var(--space-4);
+    }
+
+    .sticky-add-btn.visible { display: flex; }
+
+    .sticky-product-info { display: flex; align-items: center; gap: var(--space-4); }
+    .sticky-product-img { width: 48px; height: 48px; border-radius: var(--radius-md); object-fit: cover; }
+    .sticky-product-name { font-weight: 600; font-size: var(--text-sm); }
+    .sticky-product-price { font-weight: 700; color: var(--color-primary-dark); }
+
+    /* منتجات مشابهة */
+    .related-products { background: var(--color-bg-alt); }
+
+    @media (max-width: 1024px) {
+      .product-detail-grid {
+        grid-template-columns: 1fr;
+        gap: var(--space-8);
+      }
+      .product-gallery { position: static; }
+    }
+
+    @media (max-width: 640px) {
+      .product-detail-name { font-size: var(--text-2xl); }
+      .product-detail-price { font-size: var(--text-3xl); }
+      .detail-actions { flex-wrap: wrap; }
+      .detail-tab { padding: var(--space-3) var(--space-4); font-size: var(--text-sm); }
+    }
+  </style>
+</head>
+<body>
+
+<div id="nasma-header"></div>
+
+<main>
+  <!-- محتوى المنتج -->
+  <section class="section-padding" style="padding-top:var(--space-8);" id="product-main">
+    <div class="container">
+
+      <!-- Breadcrumb -->
+      <nav class="breadcrumb page-breadcrumb" style="margin-bottom:var(--space-8);" aria-label="مسار التنقل">
+        <a href="index.html"    class="breadcrumb-item">الرئيسية</a>
+        <span class="breadcrumb-sep">›</span>
+        <a href="products.html" class="breadcrumb-item">المنتجات</a>
+        <span class="breadcrumb-sep">›</span>
+        <span class="breadcrumb-current" id="breadcrumb-product-name">...</span>
+      </nav>
+
+      <!-- Not Found -->
+      <div id="product-not-found" style="display:none;text-align:center;padding:var(--space-20) 0;">
+        <p style="font-size:var(--text-2xl);color:var(--color-text-secondary);">المنتج غير موجود</p>
+        <a href="products.html" class="btn btn-primary" style="margin-top:var(--space-6);">تصفح المنتجات</a>
+      </div>
+
+      <!-- تفاصيل المنتج -->
+      <div class="product-detail-grid" id="product-detail-content">
+
+        <!-- معرض الصور -->
+        <div class="product-gallery animate-on-scroll">
+          <div class="gallery-main" id="gallery-main">
+            <div class="gallery-placeholder">
+              <svg viewBox="0 0 24 24" fill="none" stroke="var(--color-primary)" stroke-width="0.8" opacity="0.4" width="80" height="80">
+                <rect x="3" y="3" width="18" height="18" rx="2"/><path d="m3 9 4-4 4 4 4-4 4 4"/><circle cx="8.5" cy="13.5" r="1.5"/>
+              </svg>
+            </div>
+          </div>
+          <div class="gallery-thumbs" id="gallery-thumbs"></div>
+        </div>
+
+        <!-- معلومات المنتج -->
+        <div class="product-detail-info animate-on-scroll animate-delay-1" id="product-info-panel">
+          <p class="product-detail-category" id="detail-category">...</p>
+          <h1 class="product-detail-name" id="detail-name">...</h1>
+
+          <!-- تقييم -->
+          <div class="product-detail-rating">
+            <div class="stars" id="detail-stars" style="font-size:1.2rem;"></div>
+            <span class="rating-count" id="detail-review-count"></span>
+          </div>
+
+          <!-- السعر -->
+          <div class="product-detail-price-row">
+            <span class="product-detail-price" id="detail-price"></span>
+            <span class="product-detail-price-old" id="detail-price-old" style="display:none;"></span>
+            <span class="discount-badge" id="detail-discount-badge" style="display:none;"></span>
+          </div>
+
+          <!-- الحجم -->
+          <div class="option-group" id="sizes-group" style="display:none;">
+            <p class="option-label">
+              الحجم: <span class="option-selected" id="selected-size"></span>
+            </p>
+            <div class="option-chips" id="sizes-chips"></div>
+          </div>
+
+          <!-- اللون -->
+          <div class="option-group" id="colors-group" style="display:none;">
+            <p class="option-label">
+              اللون: <span class="option-selected" id="selected-color"></span>
+            </p>
+            <div class="option-chips" id="colors-chips"></div>
+          </div>
+
+          <!-- الكمية -->
+          <div class="option-group">
+            <p class="option-label">الكمية</p>
+            <div class="qty-control">
+              <button class="qty-btn" id="qty-minus" aria-label="تقليل الكمية">−</button>
+              <span class="qty-display" id="qty-display">1</span>
+              <button class="qty-btn" id="qty-plus"  aria-label="زيادة الكمية">+</button>
+            </div>
+          </div>
+
+          <!-- الإجراءات -->
+          <div class="detail-actions">
+            <button class="btn btn-primary" id="detail-add-btn" aria-label="أضف للسلة">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18">
+                <path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 0 1-8 0"/>
+              </svg>
+              أضف للسلة
+            </button>
+            <button class="wishlist-detail-btn" id="detail-wishlist-btn" aria-label="أضف للمفضلة">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7">
+                <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78L12 21.23l8.84-8.84a5.5 5.5 0 0 0 0-7.78z"/>
+              </svg>
+            </button>
+          </div>
+
+          <!-- معلومات الشحن -->
+          <div class="shipping-info">
+            <div class="shipping-item">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7">
+                <rect x="1" y="3" width="15" height="13"/><path d="M16 8h4l3 3v5h-7V8z"/>
+                <circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/>
+              </svg>
+              <span id="shipping-msg">شحن آمن لجميع المناطق والمحافظات في أسرع وقت</span>
+            </div>
+            <div class="shipping-item">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7">
+                <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+              </svg>
+              <span>الدفع عند الاستلام — آمن 100%</span>
+            </div>
+          </div>
+
+          <!-- مشاركة -->
+          <div style="display:flex;align-items:center;gap:var(--space-3);">
+            <span style="font-size:var(--text-sm);color:var(--color-text-light);">شاركي المنتج:</span>
+            <button class="social-link" onclick="shareProduct('whatsapp')" aria-label="واتساب" style="background:var(--color-bg-alt);">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" width="16" height="16"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg>
+            </button>
+            <button class="social-link" onclick="navigator.clipboard.writeText(location.href).then(()=>NasmaStore.showToast('تم نسخ الرابط'))" aria-label="نسخ الرابط" style="background:var(--color-bg-alt);">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" width="16" height="16"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
+            </button>
+          </div>
+        </div>
+
+      </div><!-- / product-detail-grid -->
+
+      <!-- التبويبات -->
+      <div style="margin-top:var(--space-16);">
+        <div class="detail-tabs">
+          <button class="detail-tab active" data-tab="description">الوصف</button>
+          <button class="detail-tab" data-tab="specs">المواصفات</button>
+          <button class="detail-tab" data-tab="shipping-tab">الشحن والإرجاع</button>
+        </div>
+
+        <div class="tab-panel active" id="tab-description">
+          <p id="tab-desc-content" style="max-width:680px;"></p>
+        </div>
+        <div class="tab-panel" id="tab-specs">
+          <div id="tab-specs-content"></div>
+        </div>
+        <div class="tab-panel" id="tab-shipping-tab">
+          <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:var(--space-6);max-width:720px;">
+            <div>
+              <h4 style="font-weight:700;margin-bottom:var(--space-3);">🚚 الشحن</h4>
+              <ul style="list-style:none;display:flex;flex-direction:column;gap:var(--space-2);font-size:var(--text-sm);color:var(--color-text-secondary);">
+                <li id="shipping-tab-msg">• شحن آمن لجميع المناطق والمحافظات في أسرع وقت</li>
+                <li>• شحن سريع لكافة المحافظات خلال 3-5 أيام عمل</li>
+                <li>• الدفع عند الاستلام متاح</li>
+              </ul>
+            </div>
+            <div>
+              <h4 style="font-weight:700;margin-bottom:var(--space-3);">🔄 الإرجاع</h4>
+              <ul style="list-style:none;display:flex;flex-direction:column;gap:var(--space-2);font-size:var(--text-sm);color:var(--color-text-secondary);">
+                <li>• يجب أن يكون المنتج بحالته الأصلية</li>
+                <li>• استرداد كامل المبلغ خلال 3-5 أيام عمل</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- منتجات مشابهة -->
+  <section class="related-products section-padding" id="related-section" style="display:none;">
+    <div class="container">
+      <div class="section-header animate-on-scroll">
+        <p class="section-label">اكتشفي المزيد</p>
+        <h2 class="section-title">منتجات قد تعجبكِ</h2>
+      </div>
+      <div class="products-grid" id="related-grid" style="grid-template-columns:repeat(4,1fr);"></div>
+    </div>
+  </section>
+</main>
+
+<!-- Sticky زر الإضافة -->
+<div class="sticky-add-btn" id="sticky-add-bar">
+  <div class="sticky-product-info">
+    <img id="sticky-img" class="sticky-product-img" src="" alt="" style="display:none;">
+    <div>
+      <p class="sticky-product-name" id="sticky-name"></p>
+      <p class="sticky-product-price" id="sticky-price"></p>
+    </div>
+  </div>
+  <button class="btn btn-primary" id="sticky-add-btn" style="white-space:nowrap;">
+    أضف للسلة
+  </button>
+</div>
+
+<button class="scroll-top" id="scroll-top">
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="18 15 12 9 6 15"/></svg>
+</button>
+
+<div id="nasma-footer"></div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="supabase.js"></script>
+<script src="data.js"></script>
+<script src="store.js"></script>
+<script>
+'use strict';
+
+let currentProduct = null;
+let selectedSize   = '';
+let selectedColor  = '';
+let qty            = 1;
+
+document.addEventListener('DOMContentLoaded', () => {
+  NasmaStore.initPage('products');
+
+  const params = new URLSearchParams(location.search);
+  const id     = params.get('id');
+
+  if (!id) { showNotFound(); return; }
+
+  const product = NasmaDB.ProductsDB.getById(id);
+  if (!product) { showNotFound(); return; }
+
+  currentProduct = product;
+  renderProduct(product);
+  renderRelated(product);
+  initProductEvents(product);
+  initStickyBar(product);
+  initTabs();
+
+  // تتبع مشاهدة المنتج للبيكسلات
+  if (typeof window.nasmaTrackViewContent === 'function') {
+    window.nasmaTrackViewContent(product);
+  }
+});
+
+/* --- عرض المنتج --- */
+function renderProduct(p) {
+  // Meta
+  document.title = `${p.name} — نسما`;
+  document.getElementById('breadcrumb-product-name').textContent = p.name;
+
+  // التصنيف
+  const cat = NasmaDB.CategoriesDB.getById(p.categoryId);
+  document.getElementById('detail-category').textContent = cat ? cat.name : '';
+
+  // الاسم
+  document.getElementById('detail-name').textContent = p.name;
+
+  // التقييم
+  document.getElementById('detail-stars').textContent = NasmaDB.starsHTML(p.rating);
+  document.getElementById('detail-review-count').textContent = `(${p.reviewCount} تقييم)`;
+
+  // السعر
+  document.getElementById('detail-price').textContent = NasmaDB.formatPrice(p.price);
+  if (p.priceOld > p.price) {
+    const old = document.getElementById('detail-price-old');
+    const badge = document.getElementById('detail-discount-badge');
+    old.textContent = NasmaDB.formatPrice(p.priceOld);
+    old.style.display = '';
+    const pct = Math.round((p.priceOld - p.price) / p.priceOld * 100);
+    badge.textContent = `خصم ${pct}%`;
+    badge.style.display = '';
+  }
+
+  // الوصف
+  document.getElementById('tab-desc-content').textContent = p.description || 'لا يوجد وصف متاح لهذا المنتج.';
+
+  // المواصفات
+  const specsContent = document.getElementById('tab-specs-content');
+  const specs = [
+    { label: 'رمز المنتج (SKU)', value: p.sku },
+    { label: 'المخزون', value: p.stock > 0 ? `تم بيع ${p.soldCount || 0} قطعة ويتبقى ${p.stock}` : 'نفدت الكمية' },
+    { label: 'التصنيف', value: cat ? cat.name : '-' },
+  ];
+  specsContent.innerHTML = `<table style="border-collapse:collapse;width:100%;max-width:500px;">
+    ${specs.map(s => `
+      <tr style="border-bottom:1px solid var(--color-border-light);">
+        <td style="padding:var(--space-3) var(--space-4);font-size:var(--text-sm);font-weight:700;color:var(--color-text);width:140px;">${s.label}</td>
+        <td style="padding:var(--space-3) var(--space-4);font-size:var(--text-sm);color:var(--color-text-secondary);">${s.value}</td>
+      </tr>`).join('')}
+  </table>`;
+
+  // الصور
+  renderGallery(p.images || []);
+
+  // الأحجام
+  if (p.sizes && p.sizes.length) {
+    document.getElementById('sizes-group').style.display = '';
+    const chipsEl = document.getElementById('sizes-chips');
+    chipsEl.innerHTML = p.sizes.map(s => `
+      <span class="option-chip" data-size="${s}">${s}</span>
+    `).join('');
+    chipsEl.querySelectorAll('.option-chip').forEach(chip => {
+      chip.addEventListener('click', () => {
+        chipsEl.querySelectorAll('.option-chip').forEach(c => c.classList.remove('selected'));
+        chip.classList.add('selected');
+        selectedSize = chip.dataset.size;
+        document.getElementById('selected-size').textContent = selectedSize;
+      });
+    });
+    // auto-select أول حجم
+    chipsEl.querySelector('.option-chip')?.click();
+  }
+
+  // الألوان
+  if (p.colors && p.colors.length) {
+    document.getElementById('colors-group').style.display = '';
+    const chipsEl = document.getElementById('colors-chips');
+    chipsEl.innerHTML = p.colors.map(c => `
+      <span class="option-chip" data-color="${c}">${c}</span>
+    `).join('');
+    chipsEl.querySelectorAll('.option-chip').forEach(chip => {
+      chip.addEventListener('click', () => {
+        chipsEl.querySelectorAll('.option-chip').forEach(c => c.classList.remove('selected'));
+        chip.classList.add('selected');
+        selectedColor = chip.dataset.color;
+        document.getElementById('selected-color').textContent = selectedColor;
+      });
+    });
+    chipsEl.querySelector('.option-chip')?.click();
+  }
+
+  // المفضلة
+  const wishBtn = document.getElementById('detail-wishlist-btn');
+  const isWished = NasmaDB.WishlistDB.has(p.id);
+  if (isWished) wishBtn.classList.add('active');
+  const svg = wishBtn.querySelector('svg');
+  if (isWished) { svg.style.fill = 'var(--color-primary)'; svg.style.stroke = 'var(--color-primary)'; }
+
+  wishBtn.addEventListener('click', () => {
+    const now = NasmaDB.WishlistDB.toggle(p.id);
+    wishBtn.classList.toggle('active', now);
+    svg.style.fill   = now ? 'var(--color-primary)' : 'none';
+    svg.style.stroke = now ? 'var(--color-primary)' : 'currentColor';
+    NasmaStore.showToast(now ? 'تمت الإضافة للمفضلة' : 'تمت الإزالة من المفضلة');
+  });
+
+  // رسالة الشحن — التكلفة تعتمد على المحافظة المختارة عند الطلب
+  const settings = NasmaDB.SettingsDB.get();
+  const freeMin = settings.freeShippingMin || 200;
+  const shippingMsg = p.price >= freeMin
+    ? 'شحن مجاني لهذا المنتج ✓'
+    : `شحن مجاني للطلبات فوق ${NasmaDB.formatPrice(freeMin)} — تكلفة الشحن تُحدد حسب المحافظة`;
+  const shippingMsgEl = document.getElementById('shipping-msg');
+  if (shippingMsgEl) shippingMsgEl.textContent = shippingMsg;
+  const shippingTabMsgEl = document.getElementById('shipping-tab-msg');
+  if (shippingTabMsgEl) shippingTabMsgEl.textContent = `• ${shippingMsg}`;
+}
+
+/* --- معرض الصور --- */
+function renderGallery(images) {
+  const main   = document.getElementById('gallery-main');
+  const thumbs = document.getElementById('gallery-thumbs');
+
+  if (!images.length) return;
+
+  const getPictureHTML = (imgSrc, altText, loadingAttr) => {
+    if (imgSrc.startsWith('assets/images/') && (imgSrc.endsWith('.png') || imgSrc.endsWith('.jpg') || imgSrc.endsWith('.jpeg'))) {
+      const baseName = imgSrc.replace(/\.(png|jpe?g)$/i, '');
+      return `<picture>
+        <source srcset="${baseName}.avif" type="image/avif">
+        <source srcset="${baseName}.webp" type="image/webp">
+        <img src="${imgSrc}" alt="${altText}" loading="${loadingAttr}" decoding="async" style="width:100%;height:auto;object-fit:cover;">
+      </picture>`;
+    }
+    return `<img src="${imgSrc}" alt="${altText}" loading="${loadingAttr}" decoding="async">`;
+  };
+
+  let current = 0;
+  const showImg = (idx) => {
+    current = idx;
+    main.innerHTML = getPictureHTML(images[idx], `صورة المنتج ${idx+1}`, idx === 0 ? 'eager' : 'lazy');
+    thumbs.querySelectorAll('.gallery-thumb').forEach((t,i) => t.classList.toggle('active', i===idx));
+  };
+
+  thumbs.innerHTML = images.map((img, i) => {
+    const isLocal = img.startsWith('assets/images/') && (img.endsWith('.png') || img.endsWith('.jpg') || img.endsWith('.jpeg'));
+    const thumbSrc = isLocal ? img.replace(/\.(png|jpe?g)$/i, '.webp') : img; // استخدام webp كصورة مصغرة خفيفة
+    return `
+      <div class="gallery-thumb${i===0?' active':''}" data-idx="${i}">
+        <img src="${thumbSrc}" alt="مصغرة ${i+1}" loading="lazy" decoding="async">
+      </div>`;
+  }).join('');
+
+  thumbs.querySelectorAll('.gallery-thumb').forEach(thumb => {
+    thumb.addEventListener('click', () => showImg(parseInt(thumb.dataset.idx)));
+  });
+
+  showImg(0);
+}
+
+/* --- أحداث الكمية والسلة --- */
+function initProductEvents(p) {
+  const qtyDisplay = document.getElementById('qty-display');
+  const minusBtn   = document.getElementById('qty-minus');
+  const plusBtn    = document.getElementById('qty-plus');
+  const addBtn     = document.getElementById('detail-add-btn');
+  const maxQty     = p.stock > 0 ? p.stock : 99;
+
+  minusBtn.addEventListener('click', () => {
+    if (qty > 1) { qty--; qtyDisplay.textContent = qty; }
+  });
+  plusBtn.addEventListener('click', () => {
+    if (qty < maxQty) { qty++; qtyDisplay.textContent = qty; }
+  });
+
+  const doAdd = () => {
+    if (p.badge === 'sold_out' || p.stock === 0) {
+      NasmaStore.showToast('نفدت الكمية لهذا المنتج', 'error');
+      return;
+    }
+    NasmaDB.CartDB.add(p.id, qty, { size: selectedSize, color: selectedColor });
+    NasmaDB.updateCartBadge();
+    NasmaStore.showCartNotification(p.id, qty);
+    addBtn.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18"><polyline points="20 6 9 17 4 12"/></svg> تمت الإضافة!`;
+    addBtn.style.background = '#4CAF50';
+    setTimeout(() => {
+      addBtn.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18"><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 0 1-8 0"/></svg> أضف للسلة`;
+      addBtn.style.background = '';
+    }, 2000);
+  };
+
+  addBtn.addEventListener('click', doAdd);
+  document.getElementById('sticky-add-btn').addEventListener('click', doAdd);
+}
+
+/* --- Sticky Bar --- */
+function initStickyBar(p) {
+  const bar    = document.getElementById('sticky-add-bar');
+  const imgEl  = document.getElementById('sticky-img');
+  const nameEl = document.getElementById('sticky-name');
+  const priceEl= document.getElementById('sticky-price');
+  const addBtn = document.getElementById('detail-add-btn');
+
+  nameEl.textContent  = p.name;
+  priceEl.textContent = NasmaDB.formatPrice(p.price);
+  if (p.images && p.images[0]) { imgEl.src = p.images[0]; imgEl.style.display = ''; }
+
+  const obs = new IntersectionObserver(([entry]) => {
+    bar.classList.toggle('visible', !entry.isIntersecting);
+  }, { threshold: 0 });
+  obs.observe(addBtn);
+}
+
+/* --- التبويبات --- */
+function initTabs() {
+  document.querySelectorAll('.detail-tab').forEach(tab => {
+    tab.addEventListener('click', () => {
+      document.querySelectorAll('.detail-tab').forEach(t => t.classList.remove('active'));
+      document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+      tab.classList.add('active');
+      const id = `tab-${tab.dataset.tab}`;
+      document.getElementById(id)?.classList.add('active');
+    });
+  });
+}
+
+/* --- منتجات مشابهة --- */
+function renderRelated(p) {
+  const related = NasmaDB.ProductsDB.getByCategory(p.categoryId)
+    .filter(r => r.id !== p.id)
+    .slice(0, 4);
+  if (!related.length) return;
+  const section = document.getElementById('related-section');
+  const grid    = document.getElementById('related-grid');
+  section.style.display = '';
+  grid.innerHTML = related.map((r, i) => NasmaStore.buildProductCard(r, i)).join('');
+  NasmaStore.initScrollAnimations();
+}
+
+/* --- Not Found --- */
+function showNotFound() {
+  document.getElementById('product-detail-content').style.display = 'none';
+  document.getElementById('product-not-found').style.display = '';
+}
+
+/* --- مشاركة --- */
+function shareProduct(platform) {
+  const url  = encodeURIComponent(location.href);
+  const text = encodeURIComponent(currentProduct?.name || 'منتج من نسما');
+  if (platform === 'whatsapp') {
+    window.open(`https://wa.me/?text=${text}%20${url}`, '_blank');
+  }
+}
+</script>
+
+<!-- Service Worker Registration -->
+<script>
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+      navigator.serviceWorker.register('/sw.js').catch(() => {});
+    });
+  }
+</script>
+
+</body>
+</html>

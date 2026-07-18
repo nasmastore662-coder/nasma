@@ -1,0 +1,88 @@
+# خطة تحسين أداء متجر نسما 🚀
+
+## الوضع الحالي — المشاكل المكتشفة
+
+| المشكلة | التأثير |
+|---------|---------|
+| 6 صور PNG حجم إجمالي ~3.7 MB | ❌ بطيء جداً |
+| Google Fonts تُحمَّل بـ `@import` في CSS | ❌ يحجب التصيير (Render Blocking) |
+| CSS واحد 44KB غير مضغوط | ❌ ثقيل |
+| JS ملفات 157KB غير مضغوطة | ❌ ثقيل |
+| لا يوجد Service Worker / Cache | ❌ لا تخزين مؤقت |
+| لا يوجد Lazy Loading للصور | ❌ كل الصور تُحمَّل دفعة واحدة |
+| لا يوجد تلميح DNS Prefetch | ❌ تأخر DNS |
+
+---
+
+## الخطة المقترحة
+
+### 📸 المرحلة 1 — تحسين الصور (أكبر تأثير)
+- تحويل صور PNG إلى **WebP** (توفير 60-80% من الحجم)
+- إضافة **AVIF** كخيار أول مع WebP كاحتياطي
+- إضافة **Lazy Loading** على جميع صور المنتجات والتصنيفات
+- تحديد **width و height** لكل صورة لمنع Layout Shift (CLS)
+- إضافة `fetchpriority="high"` لصورة Hero فقط
+- استخدام `<picture>` tag مع AVIF/WebP/PNG
+
+> [!IMPORTANT]
+> تحويل الصور يتطلب **Node.js** مثبتاً على جهازك. سنستخدم مكتبة `sharp` للتحويل.
+
+### 🎨 المرحلة 2 — تحسين CSS
+- إزالة `@import` من style.css ونقل الخط لـ `<link>` في HTML مع `display=swap`
+- استخدام **تحميل متأخر للخطوط** (`rel="preload"` ثم `rel="stylesheet"`)
+- تحميل خطوط أقل (فقط الأوزان المستخدمة فعلياً)
+- إضافة `<link rel="preconnect">` لـ Google Fonts في كل صفحة
+
+### ⚡ المرحلة 3 — تحسين JavaScript
+- إضافة `defer` على جميع ملفات JS
+- إزالة تعليقات وأسطر فارغة زائدة (minification جزئي)
+
+### 💾 المرحلة 4 — Service Worker + Cache
+- إنشاء ملف `sw.js` (Service Worker) لتخزين الأصول مؤقتاً
+- استراتيجية **Cache First** للصور والـ CSS والـ JS
+- استراتيجية **Network First** للصفحات HTML
+
+### 🌐 المرحلة 5 — تحسينات HTML
+- إضافة `dns-prefetch` و `preconnect` للموارد الخارجية
+- إضافة `preload` لـ Hero Image (LCP)
+- إضافة **Web App Manifest** (`manifest.json`)
+- إضافة `<link rel="preload">` للخطوط الأساسية
+- تحسين meta tags لأفضل SEO
+
+---
+
+## ما سيتم تنفيذه بدون Node.js (فوراً)
+
+| التحسين | التأثير المتوقع |
+|---------|----------------|
+| إصلاح تحميل الخطوط (منع Render Block) | +15 نقطة |
+| Lazy Loading للصور | +10 نقطة |
+| Service Worker Cache | +10 نقطة |
+| تحسين HTML Head (preload/prefetch) | +8 نقطة |
+| `defer` على JavaScript | +7 نقطة |
+| Web App Manifest | +5 نقطة |
+
+> [!NOTE]
+> تحويل الصور إلى WebP/AVIF هو الأكبر تأثيراً (+20 نقطة) لكنه يتطلب Node.js
+
+---
+
+## سؤال مهم قبل البدء
+
+> [!IMPORTANT]
+> هل لديك **Node.js** مثبت على جهازك؟ هذا يتيح لنا تحويل الصور تلقائياً إلى WebP/AVIF.
+> للتحقق، افتح Command Prompt واكتب: `node --version`
+
+---
+
+## ترتيب الأولويات
+
+```
+1. ✅ إصلاح Render-Blocking Fonts (فوري، بدون أدوات)
+2. ✅ Lazy Loading للصور (فوري)
+3. ✅ Preload Hero Image (LCP)
+4. ✅ defer على JavaScript
+5. ✅ Service Worker + Cache Strategy
+6. ✅ Web App Manifest
+7. ⚙️ تحويل صور PNG → WebP/AVIF (يتطلب Node.js أو أداة خارجية)
+```

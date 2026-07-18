@@ -1,0 +1,533 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#C4A882">
+  <title>سلة التسوق — نسما</title>
+
+  <!-- Web App Manifest -->
+  <link rel="manifest" href="manifest.json">
+
+  <!-- DNS Prefetch & Preconnect -->
+  <link rel="dns-prefetch" href="https://fonts.googleapis.com">
+  <link rel="dns-prefetch" href="https://fonts.gstatic.com">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+
+  <!-- Google Fonts -->
+  <link href="https://fonts.googleapis.com/css2?family=Amiri:wght@400;700&family=Tajawal:wght@300;400;500;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+  <style>
+    .cart-layout {
+      display: grid;
+      grid-template-columns: 1fr 360px;
+      gap: var(--space-8);
+      align-items: start;
+    }
+
+    .cart-items-wrapper {
+      background: var(--color-card);
+      border-radius: var(--radius-xl);
+      padding: var(--space-6);
+      border: 1px solid var(--color-border);
+    }
+
+    .cart-table-header {
+      display: grid;
+      grid-template-columns: 3fr 1fr 1.2fr 1fr auto;
+      padding-bottom: var(--space-4);
+      border-bottom: 1.5px solid var(--color-border);
+      font-weight: 700;
+      font-size: var(--text-sm);
+      color: var(--color-text-secondary);
+    }
+
+    .cart-row {
+      display: grid;
+      grid-template-columns: 3fr 1fr 1.2fr 1fr auto;
+      align-items: center;
+      padding: var(--space-5) 0;
+      border-bottom: 1px solid var(--color-border-light);
+    }
+    .cart-row:last-child {
+      border-bottom: none;
+    }
+
+    .cart-item-product {
+      display: flex;
+      align-items: center;
+      gap: var(--space-4);
+    }
+
+    .cart-item-img {
+      width: 70px;
+      height: 90px;
+      object-fit: cover;
+      border-radius: var(--radius-md);
+      background: var(--color-bg-alt);
+    }
+
+    .cart-item-info {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+
+    .cart-item-title {
+      font-weight: 600;
+      font-size: var(--text-base);
+    }
+    .cart-item-title a {
+      color: var(--color-text);
+      text-decoration: none;
+    }
+    .cart-item-title a:hover {
+      color: var(--color-primary-dark);
+    }
+
+    .cart-item-meta {
+      font-size: var(--text-xs);
+      color: var(--color-text-light);
+    }
+
+    .cart-item-price {
+      font-weight: 600;
+      color: var(--color-text);
+    }
+
+    .cart-item-total {
+      font-weight: 700;
+      color: var(--color-primary-dark);
+    }
+
+    .cart-item-remove {
+      color: var(--color-text-light);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: var(--space-2);
+      border-radius: var(--radius-full);
+      transition: all var(--transition-base);
+    }
+    .cart-item-remove:hover {
+      background: #FEE2E2;
+      color: #EF4444;
+    }
+    .cart-item-remove svg {
+      width: 18px;
+      height: 18px;
+    }
+
+    /* ملخص السلة */
+    .cart-summary {
+      background: var(--color-card);
+      border-radius: var(--radius-xl);
+      padding: var(--space-6);
+      border: 1px solid var(--color-border);
+      display: flex;
+      flex-direction: column;
+      gap: var(--space-5);
+    }
+
+    .summary-title {
+      font-family: var(--font-display);
+      font-size: var(--text-xl);
+      font-weight: 700;
+      padding-bottom: var(--space-3);
+      border-bottom: 1.5px solid var(--color-border);
+    }
+
+    .summary-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: var(--text-sm);
+      color: var(--color-text-secondary);
+    }
+    .summary-row.total {
+      font-size: var(--text-lg);
+      font-weight: 700;
+      color: var(--color-text);
+      border-top: 1.5px solid var(--color-border);
+      padding-top: var(--space-4);
+    }
+    .summary-row.total .price {
+      color: var(--color-primary-dark);
+      font-family: var(--font-display);
+      font-size: var(--text-2xl);
+    }
+
+    /* كوبون الخصم */
+    .coupon-box {
+      display: flex;
+      gap: var(--space-2);
+      margin-top: var(--space-2);
+    }
+    .coupon-input {
+      flex: 1;
+      padding: var(--space-2) var(--space-4);
+      border: 1.5px solid var(--color-border);
+      border-radius: var(--radius-full);
+      font-family: var(--font-primary);
+      font-size: var(--text-sm);
+      outline: none;
+    }
+    .coupon-input:focus {
+      border-color: var(--color-primary);
+    }
+    .coupon-btn {
+      padding: var(--space-2) var(--space-5);
+      font-size: var(--text-xs);
+    }
+
+    @media (max-width: 900px) {
+      .cart-layout {
+        grid-template-columns: 1fr;
+      }
+      .cart-table-header {
+        display: none;
+      }
+      .cart-row {
+        grid-template-columns: 1fr;
+        gap: var(--space-4);
+        border: 1.5px solid var(--color-border-light);
+        padding: var(--space-4);
+        border-radius: var(--radius-lg);
+        margin-bottom: var(--space-4);
+      }
+      .cart-row:last-child {
+        margin-bottom: 0;
+      }
+      .row-label-val {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        font-size: var(--text-sm);
+      }
+      .row-label-val::before {
+        content: attr(data-label);
+        font-weight: 700;
+        color: var(--color-text-secondary);
+      }
+      .cart-item-product {
+        justify-content: space-between;
+      }
+      .cart-item-remove {
+        align-self: flex-end;
+      }
+    }
+  </style>
+</head>
+<body>
+
+<div id="nasma-header"></div>
+
+<main>
+  <section class="section-padding" style="padding-top:var(--space-8);">
+    <div class="container">
+      
+      <!-- مسار التنقل -->
+      <nav class="breadcrumb page-breadcrumb" aria-label="مسار التنقل">
+        <a href="index.html" class="breadcrumb-item">الرئيسية</a>
+        <span class="breadcrumb-sep">›</span>
+        <span class="breadcrumb-current">سلة التسوق</span>
+      </nav>
+
+      <div class="section-header" style="text-align:right;margin-bottom:var(--space-8);">
+        <h1 class="section-title" style="text-align:right;">حقيبة التسوق</h1>
+        <p class="section-desc" style="margin-right:0;">المنتجات التي اخترتها بعناية للتألق</p>
+      </div>
+
+      <!-- محتوى السلة -->
+      <div id="cart-content-wrapper">
+        <div class="cart-layout" id="cart-main-layout">
+          
+          <!-- قائمة المنتجات -->
+          <div class="cart-items-wrapper">
+            <div class="cart-table-header">
+              <span>المنتج</span>
+              <span>السعر</span>
+              <span>الكمية</span>
+              <span>المجموع</span>
+              <span></span>
+            </div>
+            
+            <div id="cart-items-list">
+              <!-- يتم توليدها برمجياً -->
+            </div>
+          </div>
+
+          <!-- ملخص الطلب -->
+          <aside class="cart-summary" aria-label="ملخص الطلب">
+            <h2 class="summary-title">ملخص الطلب</h2>
+            
+            <div class="summary-row">
+              <span>المجموع الفرعي</span>
+              <span id="summary-subtotal">0 ج.م</span>
+            </div>
+
+            <!-- الكوبون -->
+            <div style="display:flex; flex-direction:column; gap: var(--space-2);">
+              <label class="option-label" for="coupon-code-input" style="font-size:var(--text-xs);">كود الخصم</label>
+              <div class="coupon-box">
+                <input type="text" id="coupon-code-input" class="coupon-input" placeholder="أدخلي الكود">
+                <button class="btn btn-secondary coupon-btn" id="apply-coupon-btn">تطبيق</button>
+              </div>
+              <p id="coupon-message" style="font-size:var(--text-xs); margin-top:2px; display:none;"></p>
+            </div>
+
+            <div class="summary-row" id="coupon-discount-row" style="display:none; color: #EF4444;">
+              <span>خصم الكوبون</span>
+              <span id="summary-discount">-0 ج.م</span>
+            </div>
+
+            <!-- اختيار المحافظة -->
+            <div style="display:flex; flex-direction:column; gap: var(--space-2);">
+              <label class="option-label" for="cart-city-select" style="font-size:var(--text-xs); font-weight:700;">🚚 تكلفة الشحن (اختياري)</label>
+              <select id="cart-city-select" onchange="onCityChange()" style="width:100%; padding: 8px 12px; border: 1.5px solid var(--color-border); border-radius: var(--radius-md); font-family: var(--font-primary); font-size: var(--text-sm); background: var(--color-bg); outline: none; cursor: pointer;">
+                <option value="">اختري المحافظة...</option>
+              </select>
+            </div>
+
+            <div class="summary-row">
+              <span>تكلفة الشحن</span>
+              <span id="summary-shipping">حددي المحافظة</span>
+            </div>
+
+            <div class="summary-row total">
+              <span>المجموع النهائي</span>
+              <span id="summary-total" class="price">0 ج.م</span>
+            </div>
+
+            <a href="checkout.html" class="btn btn-primary" style="justify-content:center; margin-top:var(--space-2);">
+              المتابعة لإتمام الطلب
+            </a>
+          </aside>
+
+        </div>
+      </div>
+
+    </div>
+  </section>
+</main>
+
+<div id="nasma-footer"></div>
+
+<button class="scroll-top" id="scroll-top" aria-label="العودة للأعلى" title="للأعلى">
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+    <polyline points="18 15 12 9 6 15"/>
+  </svg>
+</button>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="supabase.js"></script>
+<script src="data.js"></script>
+<script src="store.js"></script>
+<script>
+  'use strict';
+
+  let appliedCoupon = null;
+  let couponDiscount = 0;
+
+  document.addEventListener('DOMContentLoaded', () => {
+    NasmaStore.initPage('cart');
+    renderCart();
+    populateCartCities();
+
+    document.getElementById('apply-coupon-btn').addEventListener('click', applyCoupon);
+
+    // استرجاع المحافظة المحفوظة مسبقاً إن وجدت
+    const savedCity = sessionStorage.getItem('nasma_selected_city');
+    if (savedCity) {
+      const sel = document.getElementById('cart-city-select');
+      sel.value = savedCity;
+      onCityChange();
+    }
+  });
+
+  function renderCart() {
+    const cart = NasmaDB.CartDB.get();
+    const wrapper = document.getElementById('cart-content-wrapper');
+
+    if (!cart.length) {
+      wrapper.innerHTML = NasmaStore.buildEmptyState('سلة التسوق فارغة حالياً.');
+      return;
+    }
+
+    const listContainer = document.getElementById('cart-items-list');
+    listContainer.innerHTML = cart.map(item => {
+      const sizeHTML = item.size ? `<span>الحجم: ${item.size}</span>` : '';
+      const colorHTML = item.color ? `<span>اللون: ${item.color}</span>` : '';
+      const meta = [sizeHTML, colorHTML].filter(Boolean).join(' | ');
+
+      return `
+        <div class="cart-row" data-key="${item.key}">
+          <div class="cart-item-product">
+            <div style="display:flex; align-items:center; gap:var(--space-4);">
+              <img class="cart-item-img" src="${item.image || ''}" alt="${item.name}">
+              <div class="cart-item-info">
+                <h3 class="cart-item-title"><a href="product-detail.html?id=${item.productId}">${item.name}</a></h3>
+                ${meta ? `<div class="cart-item-meta">${meta}</div>` : ''}
+              </div>
+            </div>
+          </div>
+          
+          <div class="row-label-val cart-item-price" data-label="السعر">
+            <span>${NasmaDB.formatPrice(item.price)}</span>
+          </div>
+          
+          <div class="row-label-val" data-label="الكمية">
+            <div class="qty-control">
+              <button class="qty-btn" onclick="updateItemQty('${item.key}', ${item.qty - 1})">−</button>
+              <span class="qty-display" style="line-height:40px;">${item.qty}</span>
+              <button class="qty-btn" onclick="updateItemQty('${item.key}', ${item.qty + 1})">+</button>
+            </div>
+          </div>
+          
+          <div class="row-label-val cart-item-total" data-label="المجموع">
+            <span>${NasmaDB.formatPrice(item.price * item.qty)}</span>
+          </div>
+          
+          <div>
+            <button class="cart-item-remove" onclick="removeCartItem('${item.key}')" aria-label="حذف المنتج">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <polyline points="3 6 5 6 21 6"></polyline>
+                <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+              </svg>
+            </button>
+          </div>
+        </div>
+      `;
+    }).join('');
+
+    updateSummary();
+  }
+
+  function updateItemQty(key, newQty) {
+    NasmaDB.CartDB.updateQty(key, newQty);
+    renderCart();
+  }
+
+  function removeCartItem(key) {
+    NasmaDB.CartDB.remove(key);
+    renderCart();
+  }
+
+  function populateCartCities() {
+    const sel = document.getElementById('cart-city-select');
+    const cities = NasmaDB.ShippingDB.getAll();
+    cities.forEach(c => {
+      const opt = document.createElement('option');
+      opt.value = c.name;
+      opt.textContent = c.name;
+      sel.appendChild(opt);
+    });
+  }
+
+  function onCityChange() {
+    const city = document.getElementById('cart-city-select').value;
+    // حفظ المحافظة في sessionStorage لاستخدامها في صفحة إتمام الطلب
+    if (city) {
+      sessionStorage.setItem('nasma_selected_city', city);
+    } else {
+      sessionStorage.removeItem('nasma_selected_city');
+    }
+    updateSummary();
+  }
+
+  function updateSummary() {
+    const subtotal = NasmaDB.CartDB.subtotal();
+    const settings = NasmaDB.SettingsDB.get();
+    const selectedCity = document.getElementById('cart-city-select').value;
+    let shippingCost = 0;
+    let shippingDisplay;
+
+    const hasFreeShipping = subtotal >= (settings.freeShippingMin || 2000) || (appliedCoupon && appliedCoupon.freeShipping);
+
+    if (hasFreeShipping) {
+      shippingCost = 0;
+      shippingDisplay = 'شحن مجاني ✓';
+    } else if (selectedCity) {
+      shippingCost = NasmaDB.ShippingDB.getCost(selectedCity);
+      shippingDisplay = NasmaDB.formatPrice(shippingCost);
+    } else {
+      shippingCost = 0;
+      shippingDisplay = 'حددي المحافظة';
+    }
+
+    document.getElementById('summary-subtotal').textContent = NasmaDB.formatPrice(subtotal);
+    document.getElementById('summary-shipping').textContent = shippingDisplay;
+
+    // التحقق من صلاحية الكوبون بعد تحديث المجموع
+    if (appliedCoupon) {
+      const res = NasmaDB.CouponsDB.validate(appliedCoupon.code, subtotal);
+      if (res.valid) {
+        couponDiscount = res.discount;
+        document.getElementById('summary-discount').textContent = `-${NasmaDB.formatPrice(couponDiscount)}`;
+        document.getElementById('coupon-discount-row').style.display = 'flex';
+      } else {
+        // إلغاء الكوبون إذا لم يعد يلبي الشروط
+        appliedCoupon = null;
+        couponDiscount = 0;
+        document.getElementById('coupon-discount-row').style.display = 'none';
+        const msgEl = document.getElementById('coupon-message');
+        msgEl.textContent = `تم إلغاء الكوبون: ${res.error}`;
+        msgEl.className = 'option-selected';
+        msgEl.style.color = '#EF4444';
+        msgEl.style.display = 'block';
+      }
+    }
+
+    const total = Math.max(0, subtotal - couponDiscount + shippingCost);
+    document.getElementById('summary-total').textContent = NasmaDB.formatPrice(total);
+  }
+
+  function applyCoupon() {
+    const input = document.getElementById('coupon-code-input');
+    const msgEl = document.getElementById('coupon-message');
+    const code = input.value.trim();
+
+    if (!code) return;
+
+    const subtotal = NasmaDB.CartDB.subtotal();
+    const res = NasmaDB.CouponsDB.validate(code, subtotal);
+
+    msgEl.style.display = 'block';
+    if (res.valid) {
+      appliedCoupon = res.coupon;
+      couponDiscount = res.discount;
+      msgEl.textContent = `تم تطبيق كود الخصم بنجاح!`;
+      msgEl.style.color = '#4CAF50';
+      
+      // حفظ الكوبون المؤقت في sessionStorage لاستخدامه في صفحة الدفع
+      sessionStorage.setItem('nasma_applied_coupon', JSON.stringify({
+        code: code,
+        discount: couponDiscount,
+        freeShipping: !!appliedCoupon.freeShipping
+      }));
+
+      updateSummary();
+    } else {
+      appliedCoupon = null;
+      couponDiscount = 0;
+      msgEl.textContent = res.error;
+      msgEl.style.color = '#EF4444';
+      sessionStorage.removeItem('nasma_applied_coupon');
+      updateSummary();
+    }
+  }
+</script>
+
+<!-- Service Worker Registration -->
+<script>
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+      navigator.serviceWorker.register('/sw.js').catch(() => {});
+    });
+  }
+</script>
+
+</body>
+</html>
