@@ -204,29 +204,25 @@ function applySettingsToDOM(settings) {
   document.body.style.fontFamily = `'${settings.fontPrimary || 'Tajawal'}', sans-serif`;
   if (settings.storeName) document.title = `${settings.storeName} — متجر إلكتروني`;
 
-  // تحديث الأيقونة المفضلة (Favicon) بشكل ديناميكي لتفادي مشكلة كاش المتصفح
-  const faviconUrl = settings.logoDataUrl || 'assets/images/favicon-32.png?v=3';
-  let favicons = document.querySelectorAll('link[rel="icon"], link[rel="shortcut icon"]');
-  if (favicons.length > 0) {
-    favicons.forEach(fav => {
-      if (fav.getAttribute('type') === 'image/svg+xml' && !settings.logoDataUrl) {
-        fav.href = 'assets/images/favicon.svg?v=3';
-      } else {
-        fav.href = faviconUrl;
-      }
-    });
-  } else {
-    const newFav = document.createElement('link');
-    newFav.rel = 'icon';
-    newFav.type = settings.logoDataUrl ? 'image/png' : 'image/svg+xml';
-    newFav.href = settings.logoDataUrl ? faviconUrl : 'assets/images/favicon.svg?v=3';
-    document.head.appendChild(newFav);
-  }
+  // تحديث الأيقونة المفضلة (Favicon) بشكل ديناميكي فقط في حال وجود شعار مخصص مرفوع من المستخدم
+  if (settings.logoDataUrl) {
+    let favicons = document.querySelectorAll('link[rel="icon"], link[rel="shortcut icon"]');
+    if (favicons.length > 0) {
+      favicons.forEach(fav => {
+        fav.href = settings.logoDataUrl;
+      });
+    } else {
+      const newFav = document.createElement('link');
+      newFav.rel = 'icon';
+      newFav.type = 'image/png';
+      newFav.href = settings.logoDataUrl;
+      document.head.appendChild(newFav);
+    }
 
-  // تحديث أيقونة أبل
-  const appleTouch = document.querySelector('link[rel="apple-touch-icon"]');
-  if (appleTouch) {
-    appleTouch.href = settings.logoDataUrl || 'assets/images/apple-touch-icon.png?v=3';
+    const appleTouch = document.querySelector('link[rel="apple-touch-icon"]');
+    if (appleTouch) {
+      appleTouch.href = settings.logoDataUrl;
+    }
   }
 
   // مزامنة عناصر الهوية في الصفحة (الشعار والاسم)
