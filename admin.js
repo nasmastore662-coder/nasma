@@ -2313,17 +2313,45 @@ function loadLandingPageTab() {
     opt.textContent = p.name;
     select.appendChild(opt);
   });
+  
+  // إعادة تعيين الحقول
+  document.getElementById('lp-headline').value = '';
+  document.getElementById('lp-subheadline').value = '';
+  document.getElementById('lp-urgency').value = '';
+  document.getElementById('lp-cta-btn').value = 'اطلبي الآن — الدفع عند الاستلام ✓';
+  document.getElementById('lp-badge-text').value = '';
+  document.getElementById('lp-features').value = '';
+  document.getElementById('lp-testimonials').value = '';
+  document.getElementById('lp-theme').value = 'gold';
+
   const box = document.getElementById('lp-product-preview-box');
   if (box) box.style.display = 'none';
+
+  const linkSec = document.getElementById('lp-link-section');
+  if (linkSec) linkSec.style.display = 'none';
+
+  renderLandingPagesList();
 }
 
 function onLandingProductChange() {
   const pid = document.getElementById('lp-product-select').value;
   const box = document.getElementById('lp-product-preview-box');
-  if (!pid || !box) { if (box) box.style.display = 'none'; return; }
-  const p = NasmaDB.ProductsDB.getById(pid);
-  if (!p) { box.style.display = 'none'; return; }
+  const linkSec = document.getElementById('lp-link-section');
+  
+  if (!pid) {
+    if (box) box.style.display = 'none';
+    if (linkSec) linkSec.style.display = 'none';
+    return;
+  }
 
+  const p = NasmaDB.ProductsDB.getById(pid);
+  if (!p) {
+    if (box) box.style.display = 'none';
+    if (linkSec) linkSec.style.display = 'none';
+    return;
+  }
+
+  // عرض معاينة المنتج
   const previewImg = document.getElementById('lp-product-preview-img');
   if (p.images && p.images[0]) {
     previewImg.src = p.images[0];
@@ -2333,20 +2361,264 @@ function onLandingProductChange() {
   }
   document.getElementById('lp-product-preview-name').textContent = p.name;
   document.getElementById('lp-product-preview-price').textContent = NasmaDB.formatPrice(p.price);
-  box.style.display = 'flex';
+  if (box) box.style.display = 'flex';
 
-  // ملء أو تحديث القيم الافتراضية بناءً على المنتج المختار
-  const headlineEl = document.getElementById('lp-headline');
-  const subEl = document.getElementById('lp-subheadline');
+  // جلب الإعدادات المخزنة إن وجدت
+  const savedConfig = NasmaDB.LandingPagesDB.getByProductId(pid);
+  if (savedConfig) {
+    document.getElementById('lp-headline').value = savedConfig.headline || p.name;
+    document.getElementById('lp-subheadline').value = savedConfig.subheadline || 'جودة فاخرة | شحن آمن لجميع المناطق | الدفع عند الاستلام';
+    document.getElementById('lp-urgency').value = savedConfig.urgency || '';
+    document.getElementById('lp-cta-btn').value = savedConfig.ctaBtn || 'اطلبي الآن — الدفع عند الاستلام ✓';
+    document.getElementById('lp-badge-text').value = savedConfig.badgeText || '';
+    document.getElementById('lp-features').value = (savedConfig.features || []).join('\n');
+    document.getElementById('lp-testimonials').value = (savedConfig.testimonials || []).join('\n');
+    document.getElementById('lp-theme').value = savedConfig.theme || 'gold';
 
-  // نتحقق هل المستخدم كتب نصاً مخصصاً أم لا يزال اسم منتج قديم
-  const allProductNames = NasmaDB.ProductsDB.getAll().map(x => x.name);
-  const isCustomHeadline = headlineEl.value && !allProductNames.includes(headlineEl.value);
-  
-  if (!isCustomHeadline) {
-    headlineEl.value = p.name;
+    if (savedConfig.active) {
+      const baseUrl = getStoreBaseUrl();
+      const url = `${baseUrl}/landing.html?pid=${pid}`;
+      document.getElementById('lp-link-display').value = url;
+      if (linkSec) linkSec.style.display = 'block';
+    } else {
+      if (linkSec) linkSec.style.display = 'none';
+    }
+  } else {
+    // ملء قيم افتراضية ذكية للمنتج الجديد
+    document.getElementById('lp-headline').value = p.name;
+    document.getElementById('lp-subheadline').value = 'جودة فاخرة | شحن آمن لجميع المناطق | الدفع عند الاستلام';
+    document.getElementById('lp-urgency').value = '⚡ عرض لفترة محدودة — اطلبي الآن قبل نفاد المخزون!';
+    document.getElementById('lp-cta-btn').value = 'اطلبي الآن — الدفع عند الاستلام ✓';
+    document.getElementById('lp-badge-text').value = '✦ الأكثر مبيعاً';
+    document.getElementById('lp-features').value = 'خامة فاخرة ذات جودة استثنائية\nتصميم عصري وفريد يناسب كل الأوقات\nتوصيل سريع لباب المنزل\nإمكانية المعاينة قبل الدفع';
+    document.getElementById('lp-testimonials').value = 'فاطمة | العباية روعة روعة والخامة ممتازة جداً\nأميرة | الشنطة تجنن ووصلت مغلفة بشكل فاخر\nسارة | خدمة ممتازة وسريعة، والطلب وصل تاني يوم';
+    document.getElementById('lp-theme').value = 'gold';
+    if (linkSec) linkSec.style.display = 'none';
   }
-  if (!subEl.value) subEl.value = 'جودة فاخرة | شحن آمن لجميع المناطق | الدفع عند الاستلام';
+}
+
+function saveLandingPage() {
+  const pid = document.getElementById('lp-product-select').value;
+  if (!pid) { alert('⚠️ يرجى اختيار منتج أولاً.'); return; }
+
+  const config = {
+    headline:     document.getElementById('lp-headline').value.trim(),
+    subheadline:  document.getElementById('lp-subheadline').value.trim(),
+    urgency:      document.getElementById('lp-urgency').value.trim(),
+    ctaBtn:       document.getElementById('lp-cta-btn').value.trim(),
+    badgeText:    document.getElementById('lp-badge-text').value.trim(),
+    features:     document.getElementById('lp-features').value.trim().split('\n').map(s=>s.trim()).filter(Boolean),
+    testimonials: document.getElementById('lp-testimonials').value.trim().split('\n').map(s=>s.trim()).filter(Boolean),
+    theme:        document.getElementById('lp-theme').value || 'gold',
+    active:       true // التفعيل تلقائياً عند الحفظ
+  };
+
+  NasmaDB.LandingPagesDB.set(pid, config);
+  
+  // عرض الرابط المتولد
+  const baseUrl = getStoreBaseUrl();
+  const url = `${baseUrl}/landing.html?pid=${pid}`;
+  document.getElementById('lp-link-display').value = url;
+  document.getElementById('lp-link-section').style.display = 'block';
+
+  alert('🚀 تم حفظ وتفعيل صفحة الهبوط للمنتج بنجاح!');
+  renderLandingPagesList();
+}
+
+function copyLandingLink() {
+  const input = document.getElementById('lp-link-display');
+  if (!input || !input.value) return;
+  navigator.clipboard.writeText(input.value).then(() => {
+    const btn = document.getElementById('lp-copy-btn');
+    const originalText = btn.textContent;
+    btn.textContent = '✓ تم النسخ';
+    btn.style.background = '#15803d';
+    setTimeout(() => {
+      btn.textContent = originalText;
+      btn.style.background = '';
+    }, 2000);
+  });
+}
+
+function copyLandingPageUrl(productId) {
+  const baseUrl = getStoreBaseUrl();
+  const url = `${baseUrl}/landing.html?pid=${productId}`;
+  navigator.clipboard.writeText(url).then(() => {
+    alert('📋 تم نسخ رابط صفحة الهبوط إلى الحافظة!');
+  });
+}
+
+function shareLandingPage(platform) {
+  const input = document.getElementById('lp-link-display');
+  if (!input || !input.value) return;
+  shareProductLandingLink(input.value, platform);
+}
+
+function shareProductLanding(productId, platform) {
+  const baseUrl = getStoreBaseUrl();
+  const url = `${baseUrl}/landing.html?pid=${productId}`;
+  shareProductLandingLink(url, platform);
+}
+
+function shareProductLandingLink(url, platform) {
+  const message = `شاهدي هذا العرض الرائع من متجرنا المميز: ${url}`;
+  
+  if (platform === 'whatsapp') {
+    window.open(`https://api.whatsapp.com/send?text=${encodeURIComponent(message)}`, '_blank');
+  } else if (platform === 'copy-instagram') {
+    navigator.clipboard.writeText(`رابط المنتج في البايو: ${url}`).then(() => {
+      alert('📋 تم نسخ النص المنسق لإنستقرام! يمكنك الآن لصقه في المنشور أو القصة.');
+    });
+  } else if (platform === 'copy-tiktok') {
+    navigator.clipboard.writeText(`احصلي عليه الآن من هنا: ${url}`).then(() => {
+      alert('📋 تم نسخ النص المنسق لتيك توك! يمكنك الآن لصقه في وصف الفيديو أو البايو.');
+    });
+  } else if (platform === 'copy-snap') {
+    navigator.clipboard.writeText(url).then(() => {
+      alert('📋 تم نسخ الرابط! يمكنك الآن إضافته كملصق رابط في قصة سناب شات.');
+    });
+  }
+}
+
+function toggleLandingPage(productId) {
+  const active = NasmaDB.LandingPagesDB.toggle(productId);
+  renderLandingPagesList();
+  
+  // إذا كان هذا هو المنتج المختار حالياً، قم بتحديث منطقة الرابط
+  const currentPid = document.getElementById('lp-product-select').value;
+  if (currentPid === productId) {
+    const linkSec = document.getElementById('lp-link-section');
+    if (active) {
+      const baseUrl = getStoreBaseUrl();
+      const url = `${baseUrl}/landing.html?pid=${productId}`;
+      document.getElementById('lp-link-display').value = url;
+      if (linkSec) linkSec.style.display = 'block';
+    } else {
+      if (linkSec) linkSec.style.display = 'none';
+    }
+  }
+}
+
+function editLandingPage(productId) {
+  const select = document.getElementById('lp-product-select');
+  if (select) {
+    select.value = productId;
+    onLandingProductChange();
+    // تمرير الشاشة للنموذج بسلاسة
+    document.getElementById('admin-section-landingpages').scrollIntoView({ behavior: 'smooth' });
+  }
+}
+
+function deleteLandingPage(productId) {
+  if (confirm('⚠️ هل أنت متأكد من رغبتك في حذف صفحة الهبوط هذه وإيقافها؟')) {
+    NasmaDB.LandingPagesDB.delete(productId);
+    
+    // إذا كان هذا هو المنتج المختار حالياً، أعد تهيئة الواجهة
+    const currentPid = document.getElementById('lp-product-select').value;
+    if (currentPid === productId) {
+      loadLandingPageTab();
+    } else {
+      renderLandingPagesList();
+    }
+  }
+}
+
+function renderLandingPagesList() {
+  const container = document.getElementById('lp-pages-list');
+  const countEl = document.getElementById('lp-pages-count');
+  if (!container) return;
+
+  const pages = NasmaDB.LandingPagesDB.getAll();
+  const pageIds = Object.keys(pages);
+
+  if (countEl) countEl.textContent = `(${pageIds.length})`;
+
+  if (pageIds.length === 0) {
+    container.innerHTML = `
+      <div style="text-align:center; padding:40px; color:#94a3b8;">
+        <div style="font-size:40px; margin-bottom:12px;">🚀</div>
+        <p style="font-size:14px;">لم يتم إنشاء أي صفحة هبوط بعد.<br>اختر منتجاً من الأعلى واضغط "حفظ وتفعيل".</p>
+      </div>
+    `;
+    return;
+  }
+
+  let html = `
+    <div style="overflow-x:auto;">
+      <table class="admin-table">
+        <thead>
+          <tr>
+            <th>المنتج</th>
+            <th>الحالة</th>
+            <th>المشاهدات</th>
+            <th>الرابط والإجراءات</th>
+          </tr>
+        </thead>
+        <tbody>
+  `;
+
+  pageIds.forEach(id => {
+    const page = pages[id];
+    const p = NasmaDB.ProductsDB.getById(id);
+    const productName = p ? p.name : 'منتج محذوف';
+    const productImg = (p && p.images && p.images[0]) ? p.images[0] : '';
+    
+    const statusText = page.active ? 'مفعّلة' : 'معطّلة';
+    const statusClass = page.active ? 'badge-delivered' : 'badge-cancelled'; // استخدام كلاسات الألوان الموجودة مسبقاً
+    const toggleText = page.active ? 'تعطيل' : 'تفعيل';
+    const toggleBtnStyle = page.active ? 'color: #ef4444; border-color: #fecaca; background: #fef2f2;' : 'color: #10b981; border-color: #a7f3d0; background: #ecfdf5;';
+
+    html += `
+      <tr>
+        <td>
+          <div style="display:flex; align-items:center; gap:10px;">
+            ${productImg ? `<img src="${productImg}" style="width:40px; height:40px; object-fit:cover; border-radius:6px; border:1px solid #e2e8f0;">` : '<div style="width:40px; height:40px; background:#f1f5f9; border-radius:6px; display:flex; align-items:center; justify-content:center;">🛍️</div>'}
+            <span style="font-weight:700;">${productName}</span>
+          </div>
+        </td>
+        <td>
+          <span class="badge-status" style="background:${page.active ? '#d1fae5; color:#10b981' : '#fee2e2; color:#ef4444'};">
+            ${statusText}
+          </span>
+        </td>
+        <td>
+          <strong style="font-size:14px; color:#475569;">👁️ ${page.views || 0}</strong>
+        </td>
+        <td>
+          <div style="display:flex; flex-wrap:wrap; gap:6px;">
+            <button class="action-btn" onclick="toggleLandingPage('${id}')" style="font-size:11px; padding:4px 8px; border-radius:6px; font-weight:700; ${toggleBtnStyle}">
+              ${toggleText}
+            </button>
+            <button class="action-btn" onclick="editLandingPage('${id}')" style="font-size:11px; padding:4px 8px; border-radius:6px; font-weight:700; color:#3b82f6; border-color:#bfdbfe; background:#eff6ff;">
+              تعديل
+            </button>
+            <button class="action-btn" onclick="copyLandingPageUrl('${id}')" style="font-size:11px; padding:4px 8px; border-radius:6px; font-weight:700; color:#4b5563; border-color:#e5e7eb; background:#f9fafb;">
+              نسخ الرابط
+            </button>
+            <div style="position:relative; display:inline-block;">
+              <select onchange="if(this.value) { shareProductLanding('${id}', this.value); this.value=''; }" style="font-size:11px; padding:4px 8px; border-radius:6px; font-weight:700; color:#6b7280; border:1px solid #d1d5db; background:#fff; cursor:pointer; font-family:'Tajawal',sans-serif;">
+                <option value="">📤 مشاركة</option>
+                <option value="whatsapp">واتساب</option>
+                <option value="copy-instagram">نسخ لـ انستقرام</option>
+                <option value="copy-tiktok">نسخ لـ تيك توك</option>
+                <option value="copy-snap">نسخ لـ سناب شات</option>
+              </select>
+            </div>
+            <button class="action-btn" onclick="deleteLandingPage('${id}')" style="font-size:11px; padding:4px 8px; border-radius:6px; font-weight:700; color:#ef4444; border-color:#fca5a5; background:#fff5f5;">
+              حذف
+            </button>
+          </div>
+        </td>
+      </tr>
+    `;
+  });
+
+  html += `
+        </tbody>
+      </table>
+    </div>
+  `;
+  container.innerHTML = html;
 }
 
 function previewAndOpenLandingPage() {
@@ -2421,8 +2693,8 @@ function buildLandingPageHTML(product, config, settings) {
         const tText = parts[1] ? parts[1].trim() : item;
         return `<div class="testi-card">
           <div class="testi-stars">⭐⭐⭐⭐⭐</div>
-          <p class="testi-text">"${tText}"</p>
           <span class="testi-name">— ${tName}</span>
+          <p class="testi-text">"${tText}"</p>
         </div>`;
       }).join('')
     : '';
@@ -2467,8 +2739,10 @@ function buildLandingPageHTML(product, config, settings) {
     .urgency-bar{background:#111;color:#FFD700;text-align:center;padding:12px 20px;font-size:14px;font-weight:800;letter-spacing:.5px;animation:pulse 2s ease-in-out infinite}
     @keyframes pulse{0%,100%{opacity:1}50%{opacity:.8}}
     /* Hero */
-    .hero{background:var(--hero-grad);min-height:95vh;display:grid;grid-template-columns:1fr 1fr;align-items:center}
-    @media(max-width:768px){.hero{grid-template-columns:1fr;min-height:auto}}
+    .hero{background:var(--hero-grad);min-height:95vh;display:flex;align-items:center;justify-content:center;padding:40px 24px;}
+    @media(max-width:768px){.hero{min-height:auto;padding:60px 0 20px 0;}}
+    .hero-container{width:100%;max-width:1200px;display:grid;grid-template-columns:1fr 1fr;align-items:center;gap:40px;}
+    @media(max-width:768px){.hero-container{grid-template-columns:1fr;gap:20px;}}
     .hero-content{padding:60px 50px;color:#fff}
     @media(max-width:768px){.hero-content{padding:40px 24px;order:2}}
     .hero-badge-pill{display:inline-block;background:${t.heroBadge}22;border:1.5px solid var(--primary);color:var(--primary);border-radius:50px;padding:5px 16px;font-size:12px;font-weight:800;letter-spacing:1px;margin-bottom:18px;text-transform:uppercase}
@@ -2557,8 +2831,8 @@ function buildLandingPageHTML(product, config, settings) {
     .testi-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:20px}
     .testi-card{background:var(--bg-dark);border-radius:16px;padding:24px;border:1px solid ${t.primary}18}
     .testi-stars{font-size:15px;margin-bottom:10px}
-    .testi-text{font-size:14px;line-height:1.7;color:rgba(0,0,0,.65);margin-bottom:12px;font-style:italic}
-    .testi-name{font-size:12px;font-weight:700;color:var(--primary-dark)}
+    .testi-text{font-size:14px;line-height:1.7;color:rgba(0,0,0,.65);margin-bottom:0;font-style:italic}
+    .testi-name{font-size:12px;font-weight:700;color:var(--primary-dark);display:block;margin-bottom:8px}
     /* Footer CTA */
     .footer-cta{background:var(--bg-dark);border-top:1px solid ${t.primary}22;padding:50px 24px;text-align:center}
     .footer-cta-title{font-family:'Amiri',serif;font-size:1.8rem;margin-bottom:20px}
@@ -2601,7 +2875,8 @@ function buildLandingPageHTML(product, config, settings) {
   </header>
 
   <section class="hero">
-    <div class="hero-content fade-up">
+    <div class="hero-container">
+      <div class="hero-content fade-up">
       ${badgePill}
       <h1 class="hero-title">${heroTitleHTML}</h1>
       <p class="hero-subtitle">${config.subheadline}</p>
@@ -2617,8 +2892,9 @@ function buildLandingPageHTML(product, config, settings) {
         <span>استبدال واسترجاع سهل</span>
       </div>
     </div>
-    <div class="hero-img-wrap fade-up">
-      ${imgSrc ? `<img class="hero-img" src="${imgSrc}" alt="${product.name}">` : `<div class="hero-img-placeholder">🛍️</div>`}
+      <div class="hero-img-wrap fade-up">
+        ${imgSrc ? `<img class="hero-img" src="${imgSrc}" alt="${product.name}">` : `<div class="hero-img-placeholder">🛍️</div>`}
+      </div>
     </div>
   </section>
 

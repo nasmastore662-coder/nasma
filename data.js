@@ -50,15 +50,16 @@ function toCamelCase(obj) {
    ثوابت مفاتيح التخزين
    =========================================== */
 const DB_KEYS = {
-  PRODUCTS:   'nasma_products',
-  CATEGORIES: 'nasma_categories',
-  ORDERS:     'nasma_orders',
-  CART:       'nasma_cart',
-  WISHLIST:   'nasma_wishlist',
-  COUPONS:    'nasma_coupons',
-  SETTINGS:   'nasma_store_settings',
-  ADMIN_PASS: 'nasma_admin_pass',
-  SHIPPING:   'nasma_shipping_cities',
+  PRODUCTS:      'nasma_products',
+  CATEGORIES:    'nasma_categories',
+  ORDERS:        'nasma_orders',
+  CART:          'nasma_cart',
+  WISHLIST:      'nasma_wishlist',
+  COUPONS:       'nasma_coupons',
+  SETTINGS:      'nasma_store_settings',
+  ADMIN_PASS:    'nasma_admin_pass',
+  SHIPPING:      'nasma_shipping_cities',
+  LANDING_PAGES: 'nasma_landing_pages',
 };
 
 /* ===========================================
@@ -699,6 +700,78 @@ const ShippingDB = {
 };
 
 /* ===========================================
+   صفحات الهبوط — Landing Pages
+   =========================================== */
+const LandingPagesDB = {
+  getAll() {
+    return DB.get(DB_KEYS.LANDING_PAGES, {});
+  },
+  save(pages) {
+    return DB.set(DB_KEYS.LANDING_PAGES, pages);
+  },
+  getByProductId(productId) {
+    const pages = this.getAll();
+    return pages[productId] || null;
+  },
+  set(productId, config) {
+    const pages = this.getAll();
+    const existing = pages[productId] || {};
+    pages[productId] = {
+      ...existing,
+      ...config,
+      productId,
+      updatedAt: new Date().toISOString(),
+      createdAt: existing.createdAt || new Date().toISOString(),
+      views: existing.views || 0,
+    };
+    this.save(pages);
+    return pages[productId];
+  },
+  activate(productId) {
+    const pages = this.getAll();
+    if (pages[productId]) {
+      pages[productId].active = true;
+      pages[productId].updatedAt = new Date().toISOString();
+      this.save(pages);
+    }
+  },
+  deactivate(productId) {
+    const pages = this.getAll();
+    if (pages[productId]) {
+      pages[productId].active = false;
+      pages[productId].updatedAt = new Date().toISOString();
+      this.save(pages);
+    }
+  },
+  toggle(productId) {
+    const pages = this.getAll();
+    if (pages[productId]) {
+      pages[productId].active = !pages[productId].active;
+      pages[productId].updatedAt = new Date().toISOString();
+      this.save(pages);
+      return pages[productId].active;
+    }
+    return false;
+  },
+  incrementViews(productId) {
+    const pages = this.getAll();
+    if (pages[productId]) {
+      pages[productId].views = (pages[productId].views || 0) + 1;
+      this.save(pages);
+    }
+  },
+  delete(productId) {
+    const pages = this.getAll();
+    delete pages[productId];
+    this.save(pages);
+  },
+  isActive(productId) {
+    const page = this.getByProductId(productId);
+    return page && page.active === true;
+  },
+};
+
+/* ===========================================
    الإعدادات
    =========================================== */
 const SettingsDB = {
@@ -1186,6 +1259,7 @@ window.NasmaDB = {
   CouponsDB,
   SettingsDB,
   ShippingDB,
+  LandingPagesDB,
   AdminAuth,
   formatPrice,
   slugify,
