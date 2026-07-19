@@ -1143,12 +1143,12 @@ async function syncWithSupabase() {
     return;
   }
 
-  const path = location.pathname;
-  const isAdmin = path.includes('admin.html');
-  const isCheckoutOrCart = path.includes('checkout.html') || path.includes('cart.html');
+  const path = location.pathname.toLowerCase();
+  const isAdmin = path.includes('admin');
+  const isCheckoutOrCart = path.includes('checkout') || path.includes('cart');
 
   // تحديد ما إذا كان يجب مزامنة كل جدول حسب الصفحة الحالية لتوفير الطاقة والشبكة
-  const isLanding = path.includes('landing.html');
+  const isLanding = path.includes('landing');
   const syncCats = true;
   const syncProds = true;
   const syncSettings = true;
