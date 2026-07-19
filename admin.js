@@ -1920,6 +1920,7 @@ function loadStoreSettingsForm() {
   document.getElementById('setting-store-desc').value = settings.storeDesc || '';
   document.getElementById('setting-store-phone').value = settings.storePhone || '';
   document.getElementById('setting-store-email').value = settings.storeEmail || '';
+  document.getElementById('setting-store-url').value = settings.storeUrl || '';
   document.getElementById('setting-free-shipping-min').value = settings.freeShippingMin || 200;
   document.getElementById('setting-announcement').value = settings.announcementBar || '';
 
@@ -2130,6 +2131,7 @@ function saveStoreSettings(e) {
   const newsletterTitle        = document.getElementById('setting-newsletter-title').value.trim();
   const newsletterDesc         = document.getElementById('setting-newsletter-desc').value.trim();
 
+  const storeUrl       = document.getElementById('setting-store-url').value.trim().replace(/\/$/, ''); // إزالة / من النهاية
   const whatsapp       = document.getElementById('setting-whatsapp').value.trim();
   const instagram      = document.getElementById('setting-instagram').value.trim();
   const tiktok         = document.getElementById('setting-tiktok').value.trim();
@@ -2137,7 +2139,7 @@ function saveStoreSettings(e) {
   const facebook       = document.getElementById('setting-facebook').value.trim();
 
   NasmaDB.SettingsDB.update({
-    storeName, storeDesc, storePhone, storeEmail,
+    storeName, storeDesc, storePhone, storeEmail, storeUrl,
     freeShippingMin,
     announcementBar, announcementBarEnabled,
     colorPrimary, colorSecondary, colorBg, colorText,
@@ -3460,6 +3462,14 @@ window.nasmaTrackAddToWishlist = function(product) {
 /* ═══════════════ Product Feed ═══════════════ */
 
 function getStoreBaseUrl() {
+  // أولوية: رابط الموقع المحدد في الإعدادات (يعمل على جميع الأجهزة)
+  try {
+    const settings = NasmaDB.SettingsDB.get();
+    if (settings && settings.storeUrl && settings.storeUrl.startsWith('http')) {
+      return settings.storeUrl.replace(/\/$/, '');
+    }
+  } catch(e) {}
+  // احتياطي: حساب المسار من الـ URL الحالي
   return window.location.origin + window.location.pathname.replace(/\/[^/]*$/, '');
 }
 

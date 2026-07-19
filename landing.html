@@ -153,6 +153,19 @@
   <!-- محتوى صفحة الهبوط (يُبنى ديناميكياً) -->
   <div id="lp-root" style="display:none;"></div>
 
+  <!-- تهيئة Supabase لجلب البيانات من السحابة -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script>
+  var _supaLanding = null;
+  try {
+    if (typeof supabase !== 'undefined') {
+      _supaLanding = supabase.createClient(
+        'https://uwqextowpsmqoxclznon.supabase.co',
+        'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InV3cWV4dG93cHNtcW94Y2x6bm9uIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODQzNTE0NjksImV4cCI6MjA5OTkyNzQ2OX0.9fdSvZgz9CyJe-SKuMFWUCBIxUIhHoZz82UlUIwsxaU'
+      );
+    }
+  } catch(e) {}
+  </script>
   <script>
   (function() {
     'use strict';
@@ -162,284 +175,383 @@
     var pid = params.get('pid');
 
     if (!pid) {
-      // لا يوجد معرّف منتج — إعادة التوجيه للرئيسية
       window.location.replace('index.html');
       return;
     }
 
     // ─── دوال مساعدة ───
     function dbGet(key, fallback) {
-      try {
-        var raw = localStorage.getItem(key);
-        return raw ? JSON.parse(raw) : fallback;
-      } catch(e) { return fallback; }
+      try { var raw = localStorage.getItem(key); return raw ? JSON.parse(raw) : fallback; }
+      catch(e) { return fallback; }
     }
 
     function formatP(n) {
       return parseFloat(n || 0).toLocaleString('ar-EG', { minimumFractionDigits: 0, maximumFractionDigits: 2 }) + ' ج.م';
     }
 
-    // ─── جلب إعدادات صفحة الهبوط ───
-    var allPages = dbGet('nasma_landing_pages', {});
-    var pageConfig = allPages[pid] || null;
+    // ─── تحميل البيانات (Supabase أولاً ثم localStorage) ───
+    async function loadData() {
+      var pageConfig     = null;
+      var product        = null;
+      var settings       = dbGet('nasma_store_settings', {});
+      var shippingCities = dbGet('nasma_shipping_cities', []);
+      var coupons        = dbGet('nasma_coupons', []);
 
-    // ─── جلب بيانات المنتج ───
-    var allProducts = dbGet('nasma_products', []);
-    var product = allProducts.find(function(p) { return p.id === pid; }) || null;
+      if (_supaLanding) {
+        try {
+          // جلب صفحة الهبوط من Supabase
+          var lpRes = await _supaLanding.from('landing_pages')
+            .select('*').eq('product_id', pid).maybeSingle();
+          if (lpRes.data) {
+            var row = lpRes.data;
+            pageConfig = {
+              productId:    row.product_id,
+              headline:     row.headline     || '',
+              subheadline:  row.subheadline  || '',
+              urgency:      row.urgency      || '',
+              ctaBtn:       row.cta_btn      || '',
+              badgeText:    row.badge_text   || '',
+              features:     Array.isArray(row.features)     ? row.features     : [],
+              testimonials: Array.isArray(row.testimonials) ? row.testimonials : [],
+              theme:        row.theme        || 'gold',
+              active:       row.active       !== false,
+              views:        row.views        || 0,
+            };
+            // تسجيل المشاهدة في Supabase
+            if (pageConfig.active) {
+              _supaLanding.from('landing_pages')
+                .update({ views: pageConfig.views + 1 }).eq('product_id', pid).then(function(){});
+            }
+          }
 
-    if (!product) {
-      // المنتج غير موجود
-      window.location.replace('index.html');
-      return;
+          // جلب المنتج من Supabase
+          var prodRes = await _supaLanding.from('products')
+            .select('*').eq('id', pid).maybeSingle();
+          if (prodRes.data) {
+            var p = prodRes.data;
+            product = {
+              id:          p.id,
+              name:        p.name         || '',
+              description: p.description  || '',
+              price:       parseFloat(p.price)                            || 0,
+              priceOld:    parseFloat(p.price_old  || p.priceOld)         || 0,
+              images:      Array.isArray(p.images)  ? p.images  : [],
+              sizes:       Array.isArray(p.sizes)   ? p.sizes   : [],
+              colors:      Array.isArray(p.colors)  ? p.colors  : [],
+              active:      p.active !== false,
+            };
+          }
+
+          // جلب إعدادات المتجر من Supabase إذا لم تكن موجودة محلياً
+          if (!settings || !settings.storeName) {
+            var settRes = await _supaLanding.from('store_settings')
+              .select('*').eq('id', 'settings').maybeSingle();
+            if (settRes.data) {
+              var s = settRes.data;
+              settings = {
+                storeName:       s.store_name           || 'نسما ستور',
+                shippingFee:     parseFloat(s.shipping_fee)     || 0,
+                freeShippingMin: parseFloat(s.free_shipping_min)|| 0,
+              };
+            }
+          }
+
+          // جلب مدن الشحن إذا كانت فارغة محلياً
+          if (!shippingCities || shippingCities.length === 0) {
+            var citiesRes = await _supaLanding.from('shipping_cities').select('*');
+            if (citiesRes.data && citiesRes.data.length > 0) {
+              shippingCities = citiesRes.data.map(function(c){
+                return { name: c.name, cost: parseFloat(c.cost) || 0 };
+              });
+            }
+          }
+
+          // جلب الكوبونات النشطة إذا كانت فارغة محلياً
+          if (!coupons || coupons.length === 0) {
+            var cpnRes = await _supaLanding.from('coupons').select('*').eq('active', true);
+            if (cpnRes.data) {
+              coupons = cpnRes.data.map(function(c){
+                return {
+                  code:      c.code,
+                  type:      c.type,
+                  value:     parseFloat(c.value)                        || 0,
+                  minOrder:  parseFloat(c.min_order  || c.minOrder)     || 0,
+                  active:    c.active !== false,
+                  maxUses:   c.max_uses  || c.maxUses  || 9999,
+                  usedCount: c.used_count|| c.usedCount|| 0,
+                };
+              });
+            }
+          }
+        } catch(err) {
+          console.warn('⚠️ Supabase غير متاح، الاحتياطي: localStorage', err);
+        }
+      }
+
+      // ─── احتياطي: قراءة من localStorage ───
+      if (!pageConfig) {
+        var allPages = dbGet('nasma_landing_pages', {});
+        pageConfig = allPages[pid] || null;
+        if (pageConfig && pageConfig.active) {
+          allPages[pid].views = (allPages[pid].views || 0) + 1;
+          try { localStorage.setItem('nasma_landing_pages', JSON.stringify(allPages)); } catch(e) {}
+        }
+      }
+      if (!product) {
+        var allProds = dbGet('nasma_products', []);
+        product = allProds.find(function(p){ return p.id === pid; }) || null;
+      }
+
+      return { pageConfig: pageConfig, product: product, settings: settings,
+               shippingCities: shippingCities, coupons: coupons };
     }
 
-    // ─── تسجيل المشاهدة ───
-    if (pageConfig && pageConfig.active) {
-      allPages[pid].views = (allPages[pid].views || 0) + 1;
-      try { localStorage.setItem('nasma_landing_pages', JSON.stringify(allPages)); } catch(e) {}
-    }
+    // ─── تشغيل التحميل ───
+    loadData().then(function(data) {
+      var pageConfig     = data.pageConfig;
+      var product        = data.product;
+      var settings       = data.settings;
+      var shippingCities = data.shippingCities;
+      var coupons        = data.coupons;
 
-    // ─── إذا الصفحة غير مفعّلة أو لا توجد إعدادات ───
-    if (!pageConfig || !pageConfig.active) {
-      window.location.replace('product-detail.html?id=' + pid);
-      return;
-    }
+      if (!product) {
+        window.location.replace('index.html');
+        return;
+      }
 
-    // ─── بناء صفحة الهبوط ───
-    var settings = dbGet('nasma_store_settings', {});
-    var storeName = settings.storeName || settings.store_name || 'نسما ستور';
-    var shippingFee = settings.shippingFee || settings.shipping_fee || 0;
-    var freeMin = settings.freeShippingMin || settings.free_shipping_min || 0;
-    var shippingCities = dbGet('nasma_shipping_cities', []);
-    var coupons = dbGet('nasma_coupons', []);
+      // ─── إذا الصفحة غير مفعّلة أو غير موجودة ───
+      if (!pageConfig || !pageConfig.active) {
+        window.location.replace('product-detail.html?id=' + pid);
+        return;
+      }
 
-    var config = pageConfig;
-    var features   = config.features   || [];
-    var testimonials = config.testimonials || [];
-    var theme = config.theme || 'gold';
+      // ─── بناء صفحة الهبوط ───
+      var storeName   = settings.storeName || settings.store_name || 'نسما ستور';
+      var shippingFee = parseFloat(settings.shippingFee  || settings.shipping_fee)  || 0;
+      var freeMin     = parseFloat(settings.freeShippingMin || settings.free_shipping_min) || 0;
 
-    // ─── الثيمات ───
-    var themes = {
-      gold:  { primary: '#C4A882', dark: '#9E7E57', bg: '#FAF8F5', bgDark: '#F2EDE6', text: '#2C2C2C', accent: '#7C5C3A', heroGrad: 'linear-gradient(135deg,#1a1008 0%,#3d2b12 50%,#1a1008 100%)', heroBadge: '#C4A882' },
-      dark:  { primary: '#E5C97E', dark: '#B89A42', bg: '#12120F', bgDark: '#1C1C17', text: '#F0EDE8', accent: '#E5C97E', heroGrad: 'linear-gradient(135deg,#0a0a08 0%,#1e1e18 50%,#0a0a08 100%)', heroBadge: '#E5C97E' },
-      rose:  { primary: '#D4829A', dark: '#A85672', bg: '#FFF5F7', bgDark: '#FCEEF1', text: '#2C1A22', accent: '#8B3A56', heroGrad: 'linear-gradient(135deg,#2a0d18 0%,#5c1e35 50%,#2a0d18 100%)', heroBadge: '#D4829A' },
-      teal:  { primary: '#5BA6A0', dark: '#3C7E79', bg: '#F4FAFA', bgDark: '#E8F5F4', text: '#142525', accent: '#2A5C59', heroGrad: 'linear-gradient(135deg,#051a1a 0%,#0f3535 50%,#051a1a 100%)', heroBadge: '#5BA6A0' },
-      navy:  { primary: '#5C78C0', dark: '#3855A0', bg: '#F4F6FB', bgDark: '#E9EDF7', text: '#141C35', accent: '#2A3B80', heroGrad: 'linear-gradient(135deg,#080d24 0%,#141c40 50%,#080d24 100%)', heroBadge: '#7B9BDD' },
-    };
-    var t = themes[theme] || themes.gold;
+      var config       = pageConfig;
+      var features     = config.features     || [];
+      var testimonials = config.testimonials || [];
+      var theme        = config.theme || 'gold';
 
-    // تحديث CSS variables
-    var root = document.documentElement;
-    root.style.setProperty('--primary',     t.primary);
-    root.style.setProperty('--primary-dark',t.dark);
-    root.style.setProperty('--bg',          t.bg);
-    root.style.setProperty('--bg-dark',     t.bgDark);
-    root.style.setProperty('--text',        t.text);
-    root.style.setProperty('--accent',      t.accent);
-    root.style.setProperty('--hero-grad',   t.heroGrad);
-    document.body.style.background = t.bg;
-    document.body.style.color      = t.text;
+      // ─── الثيمات ───
+      var themes = {
+        gold:  { primary: '#C4A882', dark: '#9E7E57', bg: '#FAF8F5', bgDark: '#F2EDE6', text: '#2C2C2C', accent: '#7C5C3A', heroGrad: 'linear-gradient(135deg,#1a1008 0%,#3d2b12 50%,#1a1008 100%)', heroBadge: '#C4A882' },
+        dark:  { primary: '#E5C97E', dark: '#B89A42', bg: '#12120F', bgDark: '#1C1C17', text: '#F0EDE8', accent: '#E5C97E', heroGrad: 'linear-gradient(135deg,#0a0a08 0%,#1e1e18 50%,#0a0a08 100%)', heroBadge: '#E5C97E' },
+        rose:  { primary: '#D4829A', dark: '#A85672', bg: '#FFF5F7', bgDark: '#FCEEF1', text: '#2C1A22', accent: '#8B3A56', heroGrad: 'linear-gradient(135deg,#2a0d18 0%,#5c1e35 50%,#2a0d18 100%)', heroBadge: '#D4829A' },
+        teal:  { primary: '#5BA6A0', dark: '#3C7E79', bg: '#F4FAFA', bgDark: '#E8F5F4', text: '#142525', accent: '#2A5C59', heroGrad: 'linear-gradient(135deg,#051a1a 0%,#0f3535 50%,#051a1a 100%)', heroBadge: '#5BA6A0' },
+        navy:  { primary: '#5C78C0', dark: '#3855A0', bg: '#F4F6FB', bgDark: '#E9EDF7', text: '#141C35', accent: '#2A3B80', heroGrad: 'linear-gradient(135deg,#080d24 0%,#141c40 50%,#080d24 100%)', heroBadge: '#7B9BDD' },
+      };
+      var t = themes[theme] || themes.gold;
 
-    var imgSrc  = (product.images && product.images[0]) ? product.images[0] : '';
-    var img2Src = (product.images && product.images[1]) ? product.images[1] : imgSrc;
-    var priceStr    = formatP(product.price);
-    var oldPriceStr = product.priceOld > product.price ? formatP(product.priceOld) : '';
-    var discount    = (product.priceOld > product.price) ? Math.round((1 - product.price / product.priceOld) * 100) : 0;
+      var root = document.documentElement;
+      root.style.setProperty('--primary',     t.primary);
+      root.style.setProperty('--primary-dark',t.dark);
+      root.style.setProperty('--bg',          t.bg);
+      root.style.setProperty('--bg-dark',     t.bgDark);
+      root.style.setProperty('--text',        t.text);
+      root.style.setProperty('--accent',      t.accent);
+      root.style.setProperty('--hero-grad',   t.heroGrad);
+      document.body.style.background = t.bg;
+      document.body.style.color      = t.text;
 
-    var sizesHTML = product.sizes && product.sizes.length
-      ? '<div class="opt-group"><p class="opt-label">الحجم</p><div class="opt-btns" id="size-btns">' +
-        product.sizes.map(function(s,i){ return '<button type="button" class="opt-btn' + (i===0?' selected':'') + '" onclick="selectOpt(this,\'size-btns\')">' + s + '</button>'; }).join('') +
-        '</div></div>' : '';
+      var imgSrc  = (product.images && product.images[0]) ? product.images[0] : '';
+      var img2Src = (product.images && product.images[1]) ? product.images[1] : imgSrc;
+      var priceStr    = formatP(product.price);
+      var oldPriceStr = product.priceOld > product.price ? formatP(product.priceOld) : '';
+      var discount    = (product.priceOld > product.price) ? Math.round((1 - product.price / product.priceOld) * 100) : 0;
 
-    var colorsHTML = product.colors && product.colors.length
-      ? '<div class="opt-group"><p class="opt-label">اللون</p><div class="opt-btns" id="color-btns">' +
-        product.colors.map(function(c,i){ return '<button type="button" class="opt-btn' + (i===0?' selected':'') + '" onclick="selectOpt(this,\'color-btns\')">' + c + '</button>'; }).join('') +
-        '</div></div>' : '';
+      var sizesHTML = product.sizes && product.sizes.length
+        ? '<div class="opt-group"><p class="opt-label">الحجم</p><div class="opt-btns" id="size-btns">' +
+          product.sizes.map(function(s,i){ return '<button type="button" class="opt-btn' + (i===0?' selected':'') + '" onclick="selectOpt(this,\'size-btns\')">' + s + '</button>'; }).join('') +
+          '</div></div>' : '';
 
-    var featuresHTML = features.length
-      ? features.map(function(f){ return '<li class="feat-item"><span class="feat-check">✓</span>' + f + '</li>'; }).join('')
-      : '';
+      var colorsHTML = product.colors && product.colors.length
+        ? '<div class="opt-group"><p class="opt-label">اللون</p><div class="opt-btns" id="color-btns">' +
+          product.colors.map(function(c,i){ return '<button type="button" class="opt-btn' + (i===0?' selected':'') + '" onclick="selectOpt(this,\'color-btns\')">' + c + '</button>'; }).join('') +
+          '</div></div>' : '';
 
-    var testimonialsHTML = testimonials.length
-      ? testimonials.map(function(item) {
-          var parts = item.split('|');
-          var tName = parts[0] ? parts[0].trim() : 'عميلة';
-          var tText = parts[1] ? parts[1].trim() : item;
-          return '<div class="testi-card"><div class="testi-stars">⭐⭐⭐⭐⭐</div><span class="testi-name">— ' + tName + '</span><p class="testi-text">"' + tText + '"</p></div>';
-        }).join('')
-      : '';
+      var featuresHTML = features.length
+        ? features.map(function(f){ return '<li class="feat-item"><span class="feat-check">✓</span>' + f + '</li>'; }).join('')
+        : '';
 
-    var urgencyBar = config.urgency ? '<div class="urgency-bar">' + config.urgency + '</div>' : '';
-    var badgePill  = config.badgeText ? '<span class="hero-badge-pill">' + config.badgeText + '</span>' : '';
-    var discountPill = discount > 0 ? '<span class="price-discount-pill">خصم ' + discount + '%</span>' : '';
+      var testimonialsHTML = testimonials.length
+        ? testimonials.map(function(item) {
+            var parts = item.split('|');
+            var tName = parts[0] ? parts[0].trim() : 'عميلة';
+            var tText = parts[1] ? parts[1].trim() : item;
+            return '<div class="testi-card"><div class="testi-stars">⭐⭐⭐⭐⭐</div><span class="testi-name">— ' + tName + '</span><p class="testi-text">"' + tText + '"</p></div>';
+          }).join('')
+        : '';
 
-    var words = (config.headline || product.name).trim().split(' ');
-    var highlighted = words.slice(0, Math.min(2, words.length)).join(' ');
-    var rest = words.slice(Math.min(2, words.length)).join(' ');
-    var heroTitleHTML = '<span style="color:' + t.primary + ';">' + highlighted + '</span>' + (rest ? ' ' + rest : '');
+      var urgencyBar = config.urgency   ? '<div class="urgency-bar">' + config.urgency   + '</div>' : '';
+      var badgePill  = config.badgeText ? '<span class="hero-badge-pill">' + config.badgeText + '</span>' : '';
+      var discountPill = discount > 0   ? '<span class="price-discount-pill">خصم ' + discount + '%</span>' : '';
 
-    var headline = config.headline || product.name;
-    var subheadline = config.subheadline || 'جودة فاخرة | شحن آمن | الدفع عند الاستلام';
-    var ctaBtn = config.ctaBtn || 'اطلبي الآن — الدفع عند الاستلام ✓';
+      var words = (config.headline || product.name).trim().split(' ');
+      var highlighted = words.slice(0, Math.min(2, words.length)).join(' ');
+      var rest = words.slice(Math.min(2, words.length)).join(' ');
+      var heroTitleHTML = '<span style="color:' + t.primary + ';">' + highlighted + '</span>' + (rest ? ' ' + rest : '');
 
-    // تحديث عنوان الصفحة
-    document.title = headline + ' — ' + storeName;
+      var headline    = config.headline    || product.name;
+      var subheadline = config.subheadline || 'جودة فاخرة | شحن آمن | الدفع عند الاستلام';
+      var ctaBtn      = config.ctaBtn      || 'اطلبي الآن — الدفع عند الاستلام ✓';
 
-    var storeDataJSON = JSON.stringify({
-      productId: product.id,
-      productName: product.name,
-      productPrice: product.price,
-      shippingFee: shippingFee,
-      freeMin: freeMin,
-      shippingCities: shippingCities,
-      coupons: coupons
-    }).replace(/<\/script>/gi, '<\\/script>');
+      document.title = headline + ' — ' + storeName;
 
-    var html = '' +
-    '<div class="site-body">' +
-    '<div class="success-overlay" id="success-overlay">' +
-      '<div class="success-card">' +
-        '<div class="success-icon">🎉</div>' +
-        '<h2 class="success-title">تم تأكيد طلبكِ!</h2>' +
-        '<p class="success-sub">شكراً لثقتكِ بـ <strong>' + storeName + '</strong>.<br>سيتواصل معكِ فريقنا خلال 24 ساعة لتأكيد التوصيل.</p>' +
-        '<div class="success-order-num" id="success-order-num">جاري التأكيد...</div>' +
-        '<p style="margin-top:12px;font-size:12px;color:#94a3b8">رقم طلبكِ للمتابعة</p>' +
-      '</div>' +
-    '</div>' +
-
-    '<div class="announce-bar">🌸 ' + (freeMin > 0 ? 'شحن مجاني للطلبات فوق ' + formatP(freeMin) : 'شحن مجاني لجميع الطلبات') + ' | الدفع عند الاستلام ✓</div>' +
-    urgencyBar +
-    '<header style="background:transparent;padding:15px 5%;display:flex;justify-content:space-between;align-items:center;position:absolute;left:0;right:0;z-index:100;">' +
-      '<div></div>' +
-      '<a href="index.html" class="back-store-btn">' +
-        '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>' +
-        'الذهاب للمتجر' +
-      '</a>' +
-    '</header>' +
-
-    '<section class="hero">' +
-      '<div class="hero-container">' +
-        '<div class="hero-content fade-up">' +
-        badgePill +
-        '<h1 class="hero-title">' + heroTitleHTML + '</h1>' +
-        '<p class="hero-subtitle">' + subheadline + '</p>' +
-        '<div class="hero-price-row">' +
-          '<span class="hero-price">' + priceStr + '</span>' +
-          (oldPriceStr ? '<span class="hero-price-old">' + oldPriceStr + '</span>' : '') +
-          discountPill +
+      var html = '' +
+      '<div class="site-body">' +
+      '<div class="success-overlay" id="success-overlay">' +
+        '<div class="success-card">' +
+          '<div class="success-icon">🎉</div>' +
+          '<h2 class="success-title">تم تأكيد طلبكِ!</h2>' +
+          '<p class="success-sub">شكراً لثقتكِ بـ <strong>' + storeName + '</strong>.<br>سيتواصل معكِ فريقنا خلال 24 ساعة لتأكيد التوصيل.</p>' +
+          '<div class="success-order-num" id="success-order-num">جاري التأكيد...</div>' +
+          '<p style="margin-top:12px;font-size:12px;color:#94a3b8">رقم طلبكِ للمتابعة</p>' +
         '</div>' +
-        '<button class="hero-cta" onclick="scrollToOrder()">' + ctaBtn + '</button>' +
-        '<div class="hero-trust"><span>الدفع عند الاستلام</span><span>شحن سريع وآمن</span><span>استبدال واسترجاع سهل</span></div>' +
       '</div>' +
-        '<div class="hero-img-wrap fade-up">' +
-          (imgSrc ? '<img class="hero-img" src="' + imgSrc + '" alt="' + product.name + '">' : '<div class="hero-img-placeholder">🛍️</div>') +
-        '</div>' +
-      '</div>' +
-    '</section>' +
 
-    '<div class="trust-strip">' +
-      '<div class="trust-item"><span class="trust-icon">🚚</span> شحن لجميع المناطق</div>' +
-      '<div class="trust-item"><span class="trust-icon">💳</span> الدفع عند الاستلام</div>' +
-      '<div class="trust-item"><span class="trust-icon">↩️</span> استبدال واسترجاع سهل</div>' +
-      '<div class="trust-item"><span class="trust-icon">🔒</span> ضمان أصالة المنتج</div>' +
-    '</div>' +
+      '<div class="announce-bar">🌸 ' + (freeMin > 0 ? 'شحن مجاني للطلبات فوق ' + formatP(freeMin) : 'شحن مجاني لجميع الطلبات') + ' | الدفع عند الاستلام ✓</div>' +
+      urgencyBar +
+      '<header style="background:transparent;padding:15px 5%;display:flex;justify-content:space-between;align-items:center;position:absolute;left:0;right:0;z-index:100;">' +
+        '<div></div>' +
+        '<a href="index.html" class="back-store-btn">' +
+          '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>' +
+          'الذهاب للمتجر' +
+        '</a>' +
+      '</header>' +
 
-    (featuresHTML ? '<div class="section fade-up"><h2 class="section-title">لماذا <span>تختارين</span> هذا المنتج؟</h2><ul class="feat-list">' + featuresHTML + '</ul></div>' : '') +
-
-    '<div class="section">' +
-      '<div class="product-section fade-up">' +
-        '<div>' + (imgSrc ? '<img class="prod-img" src="' + (img2Src || imgSrc) + '" alt="' + product.name + '">' : '<div class="prod-img" style="background:rgba(196,168,130,.1);display:flex;align-items:center;justify-content:center;font-size:80px;border-radius:14px;">🛍️</div>') + '</div>' +
-        '<div class="prod-info">' +
-          '<h2 class="prod-name">' + product.name + '</h2>' +
-          (product.description ? '<p class="prod-desc">' + product.description + '</p>' : '') +
-          '<div class="prod-price-row">' +
-            '<span class="prod-price">' + priceStr + '</span>' +
-            (oldPriceStr ? '<span class="prod-price-old">' + oldPriceStr + '</span>' : '') +
+      '<section class="hero">' +
+        '<div class="hero-container">' +
+          '<div class="hero-content fade-up">' +
+          badgePill +
+          '<h1 class="hero-title">' + heroTitleHTML + '</h1>' +
+          '<p class="hero-subtitle">' + subheadline + '</p>' +
+          '<div class="hero-price-row">' +
+            '<span class="hero-price">' + priceStr + '</span>' +
+            (oldPriceStr ? '<span class="hero-price-old">' + oldPriceStr + '</span>' : '') +
             discountPill +
           '</div>' +
-          sizesHTML +
-          colorsHTML +
-          '<div class="qty-row"><span class="qty-label">الكمية</span><div class="qty-ctrl"><button class="qty-btn" onclick="changeQty(-1)">−</button><span class="qty-val" id="qty-display">1</span><button class="qty-btn" onclick="changeQty(1)">+</button></div></div>' +
-          '<button class="prod-cta" onclick="scrollToOrder()">' + ctaBtn + '</button>' +
+          '<button class="hero-cta" onclick="scrollToOrder()">' + ctaBtn + '</button>' +
+          '<div class="hero-trust"><span>الدفع عند الاستلام</span><span>شحن سريع وآمن</span><span>استبدال واسترجاع سهل</span></div>' +
         '</div>' +
-      '</div>' +
-    '</div>' +
-
-    (testimonialsHTML ? '<div class="section fade-up"><h2 class="section-title">ماذا تقول <span>عميلاتنا</span>؟</h2><div class="testi-grid">' + testimonialsHTML + '</div></div>' : '') +
-
-    '<div class="order-form-section" id="order-section">' +
-      '<div class="order-form-wrap fade-up">' +
-        '<h2 class="order-form-title">أكملي طلبكِ الآن</h2>' +
-        '<p class="order-form-sub">أدخلي بياناتكِ وسنتواصل معكِ لتأكيد التوصيل</p>' +
-        '<div class="order-summary">' +
-          '<div class="order-summary-row"><span>' + product.name + '</span><span id="lp-item-price">' + priceStr + '</span></div>' +
-          '<div class="order-summary-row"><span>الكمية</span><span id="lp-qty-summary">× 1</span></div>' +
-          '<div class="order-summary-row" id="lp-discount-row" style="display:none;color:#ef4444;"><span>خصم الكوبون</span><span id="lp-discount-display">-0 ج.م</span></div>' +
-          '<div class="order-summary-row"><span>الشحن</span><span id="lp-shipping-display">سيُحدد بعد اختيار المحافظة</span></div>' +
-          '<div class="order-summary-total"><span>الإجمالي</span><span id="lp-total-display">' + priceStr + '</span></div>' +
-        '</div>' +
-        '<form id="lp-order-form" onsubmit="submitLandingOrder(event)">' +
-          '<div class="form-row">' +
-            '<div class="form-group"><label class="form-label">الاسم الكامل *</label><input type="text" class="form-input" id="lp-name" placeholder="اسمكِ الكريم" required></div>' +
-            '<div class="form-group"><label class="form-label">رقم الهاتف *</label><input type="tel" class="form-input" id="lp-phone" placeholder="01XXXXXXXXX" required></div>' +
+          '<div class="hero-img-wrap fade-up">' +
+            (imgSrc ? '<img class="hero-img" src="' + imgSrc + '" alt="' + product.name + '">' : '<div class="hero-img-placeholder">🛍️</div>') +
           '</div>' +
-          '<div class="form-group"><label class="form-label">المحافظة *</label><select class="form-input" id="lp-city" onchange="calcTotal()" required style="height:48px;"><option value="">— اختر المحافظة —</option></select></div>' +
-          '<div class="form-group"><label class="form-label">العنوان التفصيلي *</label><input type="text" class="form-input" id="lp-address" placeholder="الحي، الشارع، رقم المبنى..." required></div>' +
-          (sizesHTML ? '<div class="form-group"><label class="form-label">الحجم المختار</label><input type="text" class="form-input" id="lp-selected-size" readonly placeholder="اختاري الحجم من الأعلى"></div>' : '') +
-          (colorsHTML ? '<div class="form-group"><label class="form-label">اللون المختار</label><input type="text" class="form-input" id="lp-selected-color" readonly placeholder="اختاري اللون من الأعلى"></div>' : '') +
-          '<div class="form-group"><label class="form-label">كود الخصم (إن وجد)</label><div style="display:flex;gap:8px;"><input type="text" class="form-input" id="lp-coupon" placeholder="أدخلي كود الخصم" style="text-transform:uppercase;"><button type="button" class="prod-cta" onclick="applyCouponCode()" style="width:auto;padding:10px 24px;white-space:nowrap;border-radius:10px;">تطبيق</button></div><div id="lp-coupon-msg" style="font-size:12px;margin-top:6px;font-weight:700;display:none;"></div></div>' +
-          '<div class="form-group"><label class="form-label">ملاحظات (اختياري)</label><input type="text" class="form-input" id="lp-notes" placeholder="أي تفاصيل إضافية..."></div>' +
-          '<button type="submit" class="submit-btn" id="lp-submit-btn">' + ctaBtn + '</button>' +
-          '<p class="form-note">🔒 بياناتكِ محمية ولن تُشارك مع أي جهة<br>📦 الدفع عند الاستلام — لا حاجة لبطاقة بنكية</p>' +
-        '</form>' +
+        '</div>' +
+      '</section>' +
+
+      '<div class="trust-strip">' +
+        '<div class="trust-item"><span class="trust-icon">🚚</span> شحن لجميع المناطق</div>' +
+        '<div class="trust-item"><span class="trust-icon">💳</span> الدفع عند الاستلام</div>' +
+        '<div class="trust-item"><span class="trust-icon">↩️</span> استبدال واسترجاع سهل</div>' +
+        '<div class="trust-item"><span class="trust-icon">🔒</span> ضمان أصالة المنتج</div>' +
       '</div>' +
-    '</div>' +
 
-    '<div class="footer-cta fade-up">' +
-      '<h2 class="footer-cta-title">لا تترددي — الفرصة لن تعود</h2>' +
-      '<button class="hero-cta" style="max-width:340px;margin:0 auto;display:flex;" onclick="scrollToOrder()">' + ctaBtn + '</button>' +
-      '<p class="footer-brand">' + storeName + ' — ' + new Date().getFullYear() + ' © جميع الحقوق محفوظة</p>' +
-    '</div>' +
+      (featuresHTML ? '<div class="section fade-up"><h2 class="section-title">لماذا <span>تختارين</span> هذا المنتج؟</h2><ul class="feat-list">' + featuresHTML + '</ul></div>' : '') +
 
-    '<button class="sticky-cta" onclick="scrollToOrder()">' +
-      '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>' +
-      ctaBtn +
-    '</button>' +
-    '</div>';
+      '<div class="section">' +
+        '<div class="product-section fade-up">' +
+          '<div>' + (imgSrc ? '<img class="prod-img" src="' + (img2Src || imgSrc) + '" alt="' + product.name + '">' : '<div class="prod-img" style="background:rgba(196,168,130,.1);display:flex;align-items:center;justify-content:center;font-size:80px;border-radius:14px;">🛍️</div>') + '</div>' +
+          '<div class="prod-info">' +
+            '<h2 class="prod-name">' + product.name + '</h2>' +
+            (product.description ? '<p class="prod-desc">' + product.description + '</p>' : '') +
+            '<div class="prod-price-row">' +
+              '<span class="prod-price">' + priceStr + '</span>' +
+              (oldPriceStr ? '<span class="prod-price-old">' + oldPriceStr + '</span>' : '') +
+              discountPill +
+            '</div>' +
+            sizesHTML +
+            colorsHTML +
+            '<div class="qty-row"><span class="qty-label">الكمية</span><div class="qty-ctrl"><button class="qty-btn" onclick="changeQty(-1)">−</button><span class="qty-val" id="qty-display">1</span><button class="qty-btn" onclick="changeQty(1)">+</button></div></div>' +
+            '<button class="prod-cta" onclick="scrollToOrder()">' + ctaBtn + '</button>' +
+          '</div>' +
+        '</div>' +
+      '</div>' +
 
-    // ─── عرض الصفحة ───
-    document.getElementById('loading-screen').style.display = 'none';
-    var root2 = document.getElementById('lp-root');
-    root2.innerHTML = html;
-    root2.style.display = 'block';
+      (testimonialsHTML ? '<div class="section fade-up"><h2 class="section-title">ماذا تقول <span>عميلاتنا</span>؟</h2><div class="testi-grid">' + testimonialsHTML + '</div></div>' : '') +
 
-    // ─── منطق الصفحة ───
-    window.SD = {
-      productId: product.id,
-      productName: product.name,
-      productPrice: product.price,
-      freeMin: freeMin,
-      shippingCities: shippingCities,
-      coupons: coupons
-    };
-    window.currentQty = 1;
-    window.unitPrice  = product.price;
-    window.shippingCost = 0;
-    window.appliedCoupon = null;
-    window.discountAmount = 0;
+      '<div class="order-form-section" id="order-section">' +
+        '<div class="order-form-wrap fade-up">' +
+          '<h2 class="order-form-title">أكملي طلبكِ الآن</h2>' +
+          '<p class="order-form-sub">أدخلي بياناتكِ وسنتواصل معكِ لتأكيد التوصيل</p>' +
+          '<div class="order-summary">' +
+            '<div class="order-summary-row"><span>' + product.name + '</span><span id="lp-item-price">' + priceStr + '</span></div>' +
+            '<div class="order-summary-row"><span>الكمية</span><span id="lp-qty-summary">× 1</span></div>' +
+            '<div class="order-summary-row" id="lp-discount-row" style="display:none;color:#ef4444;"><span>خصم الكوبون</span><span id="lp-discount-display">-0 ج.م</span></div>' +
+            '<div class="order-summary-row"><span>الشحن</span><span id="lp-shipping-display">سيُحدد بعد اختيار المحافظة</span></div>' +
+            '<div class="order-summary-total"><span>الإجمالي</span><span id="lp-total-display">' + priceStr + '</span></div>' +
+          '</div>' +
+          '<form id="lp-order-form" onsubmit="submitLandingOrder(event)">' +
+            '<div class="form-row">' +
+              '<div class="form-group"><label class="form-label">الاسم الكامل *</label><input type="text" class="form-input" id="lp-name" placeholder="اسمكِ الكريم" required></div>' +
+              '<div class="form-group"><label class="form-label">رقم الهاتف *</label><input type="tel" class="form-input" id="lp-phone" placeholder="01XXXXXXXXX" required></div>' +
+            '</div>' +
+            '<div class="form-group"><label class="form-label">المحافظة *</label><select class="form-input" id="lp-city" onchange="calcTotal()" required style="height:48px;"><option value="">— اختر المحافظة —</option></select></div>' +
+            '<div class="form-group"><label class="form-label">العنوان التفصيلي *</label><input type="text" class="form-input" id="lp-address" placeholder="الحي، الشارع، رقم المبنى..." required></div>' +
+            (sizesHTML  ? '<div class="form-group"><label class="form-label">الحجم المختار</label><input type="text" class="form-input" id="lp-selected-size" readonly placeholder="اختاري الحجم من الأعلى"></div>'  : '') +
+            (colorsHTML ? '<div class="form-group"><label class="form-label">اللون المختار</label><input type="text" class="form-input" id="lp-selected-color" readonly placeholder="اختاري اللون من الأعلى"></div>' : '') +
+            '<div class="form-group"><label class="form-label">كود الخصم (إن وجد)</label><div style="display:flex;gap:8px;"><input type="text" class="form-input" id="lp-coupon" placeholder="أدخلي كود الخصم" style="text-transform:uppercase;"><button type="button" class="prod-cta" onclick="applyCouponCode()" style="width:auto;padding:10px 24px;white-space:nowrap;border-radius:10px;">تطبيق</button></div><div id="lp-coupon-msg" style="font-size:12px;margin-top:6px;font-weight:700;display:none;"></div></div>' +
+            '<div class="form-group"><label class="form-label">ملاحظات (اختياري)</label><input type="text" class="form-input" id="lp-notes" placeholder="أي تفاصيل إضافية..."></div>' +
+            '<button type="submit" class="submit-btn" id="lp-submit-btn">' + ctaBtn + '</button>' +
+            '<p class="form-note">🔒 بياناتكِ محمية ولن تُشارك مع أي جهة<br>📦 الدفع عند الاستلام — لا حاجة لبطاقة بنكية</p>' +
+          '</form>' +
+        '</div>' +
+      '</div>' +
 
-    populateCities();
-    calcTotal();
-    var fs = document.querySelector('#size-btns .opt-btn');
-    if (fs) selectOpt(fs, 'size-btns');
-    var fc = document.querySelector('#color-btns .opt-btn');
-    if (fc) selectOpt(fc, 'color-btns');
+      '<div class="footer-cta fade-up">' +
+        '<h2 class="footer-cta-title">لا تترددي — الفرصة لن تعود</h2>' +
+        '<button class="hero-cta" style="max-width:340px;margin:0 auto;display:flex;" onclick="scrollToOrder()">' + ctaBtn + '</button>' +
+        '<p class="footer-brand">' + storeName + ' — ' + new Date().getFullYear() + ' © جميع الحقوق محفوظة</p>' +
+      '</div>' +
 
-    // Scroll animations
-    var obs = new IntersectionObserver(function(entries) {
-      entries.forEach(function(e){ if(e.isIntersecting){ e.target.classList.add('visible'); obs.unobserve(e.target); } });
-    }, { threshold: 0.1 });
-    document.querySelectorAll('.fade-up').forEach(function(el){ obs.observe(el); });
+      '<button class="sticky-cta" onclick="scrollToOrder()">' +
+        '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>' +
+        ctaBtn +
+      '</button>' +
+      '</div>';
+
+      // ─── عرض الصفحة ───
+      document.getElementById('loading-screen').style.display = 'none';
+      var root2 = document.getElementById('lp-root');
+      root2.innerHTML = html;
+      root2.style.display = 'block';
+
+      // ─── منطق الصفحة ───
+      window.SD = {
+        productId:     product.id,
+        productName:   product.name,
+        productPrice:  product.price,
+        freeMin:       freeMin,
+        shippingCities:shippingCities,
+        coupons:       coupons
+      };
+      window.currentQty    = 1;
+      window.unitPrice     = product.price;
+      window.shippingCost  = 0;
+      window.appliedCoupon = null;
+      window.discountAmount= 0;
+
+      populateCities();
+      calcTotal();
+      var fs = document.querySelector('#size-btns .opt-btn');
+      if (fs) selectOpt(fs, 'size-btns');
+      var fc = document.querySelector('#color-btns .opt-btn');
+      if (fc) selectOpt(fc, 'color-btns');
+
+      // Scroll animations
+      var obs = new IntersectionObserver(function(entries) {
+        entries.forEach(function(e){ if(e.isIntersecting){ e.target.classList.add('visible'); obs.unobserve(e.target); } });
+      }, { threshold: 0.1 });
+      document.querySelectorAll('.fade-up').forEach(function(el){ obs.observe(el); });
+
+    }).catch(function(err) {
+      console.error('خطأ في تحميل صفحة الهبوط:', err);
+      document.getElementById('loading-screen').style.display = 'none';
+      document.getElementById('lp-root').innerHTML = '<div style="text-align:center;padding:80px 20px;"><h2>⚠️ حدث خطأ في تحميل الصفحة</h2><p style="color:#64748b;margin-top:12px;">يرجى تحديث الصفحة أو المحاولة مرة أخرى.</p><a href="index.html" style="display:inline-block;margin-top:20px;padding:12px 28px;background:#C4A882;color:#fff;border-radius:50px;text-decoration:none;font-weight:700;">الذهاب للمتجر</a></div>';
+      document.getElementById('lp-root').style.display = 'block';
+    });
 
   })();
 
@@ -447,6 +559,7 @@
   function formatPG(n) {
     return parseFloat(n || 0).toLocaleString('ar-EG', { minimumFractionDigits: 0, maximumFractionDigits: 2 }) + ' ج.م';
   }
+
 
   function calcTotal() {
     var sub = window.unitPrice * window.currentQty;

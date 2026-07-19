@@ -707,7 +707,8 @@ const LandingPagesDB = {
     return DB.get(DB_KEYS.LANDING_PAGES, {});
   },
   save(pages) {
-    return DB.set(DB_KEYS.LANDING_PAGES, pages);
+    const success = DB.set(DB_KEYS.LANDING_PAGES, pages);
+    return success;
   },
   getByProductId(productId) {
     const pages = this.getAll();
@@ -725,6 +726,14 @@ const LandingPagesDB = {
       views: existing.views || 0,
     };
     this.save(pages);
+    // ─── مزامنة مع Supabase ───
+    if (window.supabaseClient) {
+      const row = this._toRow(pages[productId]);
+      window.supabaseClient.from('landing_pages').upsert([row], { onConflict: 'product_id' }).then(({ error }) => {
+        if (error) console.error('❌ Supabase landing_pages upsert error:', error);
+        else console.log('☁️ landing_pages synced to Supabase for product:', productId);
+      });
+    }
     return pages[productId];
   },
   activate(productId) {
@@ -733,6 +742,11 @@ const LandingPagesDB = {
       pages[productId].active = true;
       pages[productId].updatedAt = new Date().toISOString();
       this.save(pages);
+      if (window.supabaseClient) {
+        window.supabaseClient.from('landing_pages').update({ active: true, updated_at: pages[productId].updatedAt }).eq('product_id', productId).then(({ error }) => {
+          if (error) console.error('❌ Supabase landing_pages activate error:', error);
+        });
+      }
     }
   },
   deactivate(productId) {
@@ -741,6 +755,11 @@ const LandingPagesDB = {
       pages[productId].active = false;
       pages[productId].updatedAt = new Date().toISOString();
       this.save(pages);
+      if (window.supabaseClient) {
+        window.supabaseClient.from('landing_pages').update({ active: false, updated_at: pages[productId].updatedAt }).eq('product_id', productId).then(({ error }) => {
+          if (error) console.error('❌ Supabase landing_pages deactivate error:', error);
+        });
+      }
     }
   },
   toggle(productId) {
@@ -749,7 +768,13 @@ const LandingPagesDB = {
       pages[productId].active = !pages[productId].active;
       pages[productId].updatedAt = new Date().toISOString();
       this.save(pages);
-      return pages[productId].active;
+      const newActive = pages[productId].active;
+      if (window.supabaseClient) {
+        window.supabaseClient.from('landing_pages').update({ active: newActive, updated_at: pages[productId].updatedAt }).eq('product_id', productId).then(({ error }) => {
+          if (error) console.error('❌ Supabase landing_pages toggle error:', error);
+        });
+      }
+      return newActive;
     }
     return false;
   },
@@ -758,16 +783,62 @@ const LandingPagesDB = {
     if (pages[productId]) {
       pages[productId].views = (pages[productId].views || 0) + 1;
       this.save(pages);
+      if (window.supabaseClient) {
+        window.supabaseClient.from('landing_pages').update({ views: pages[productId].views }).eq('product_id', productId).then(({ error }) => {
+          if (error) console.error('❌ Supabase landing_pages views update error:', error);
+        });
+      }
     }
   },
   delete(productId) {
     const pages = this.getAll();
     delete pages[productId];
     this.save(pages);
+    if (window.supabaseClient) {
+      window.supabaseClient.from('landing_pages').delete().eq('product_id', productId).then(({ error }) => {
+        if (error) console.error('❌ Supabase landing_pages delete error:', error);
+      });
+    }
   },
   isActive(productId) {
     const page = this.getByProductId(productId);
     return page && page.active === true;
+  },
+  // ─── تحويل الكائن الداخلي إلى صف Supabase ───
+  _toRow(page) {
+    return {
+      product_id:   page.productId,
+      headline:     page.headline     || '',
+      subheadline:  page.subheadline  || '',
+      urgency:      page.urgency      || '',
+      cta_btn:      page.ctaBtn       || '',
+      badge_text:   page.badgeText    || '',
+      features:     page.features     || [],
+      testimonials: page.testimonials || [],
+      theme:        page.theme        || 'gold',
+      active:       page.active       !== false,
+      views:        page.views        || 0,
+      created_at:   page.createdAt    || new Date().toISOString(),
+      updated_at:   page.updatedAt    || new Date().toISOString(),
+    };
+  },
+  // ─── تحويل صف Supabase إلى الكائن الداخلي ───
+  _fromRow(row) {
+    return {
+      productId:    row.product_id,
+      headline:     row.headline     || '',
+      subheadline:  row.subheadline  || '',
+      urgency:      row.urgency      || '',
+      ctaBtn:       row.cta_btn      || '',
+      badgeText:    row.badge_text   || '',
+      features:     Array.isArray(row.features)     ? row.features     : [],
+      testimonials: Array.isArray(row.testimonials) ? row.testimonials : [],
+      theme:        row.theme        || 'gold',
+      active:       row.active       !== false,
+      views:        row.views        || 0,
+      createdAt:    row.created_at   || new Date().toISOString(),
+      updatedAt:    row.updated_at   || new Date().toISOString(),
+    };
   },
 };
 
@@ -1077,12 +1148,14 @@ async function syncWithSupabase() {
   const isCheckoutOrCart = path.includes('checkout.html') || path.includes('cart.html');
 
   // تحديد ما إذا كان يجب مزامنة كل جدول حسب الصفحة الحالية لتوفير الطاقة والشبكة
+  const isLanding = path.includes('landing.html');
   const syncCats = true;
   const syncProds = true;
   const syncSettings = true;
   const syncCoupons = isAdmin || isCheckoutOrCart;
-  const syncShipping = isAdmin || isCheckoutOrCart;
+  const syncShipping = isAdmin || isCheckoutOrCart || isLanding;
   const syncOrders = isAdmin;
+  const syncLandingPages = isAdmin || isLanding;
 
   console.log(`🔄 جاري المزامنة بالتوازي مع Supabase (التحميل المخصص للمسار: ${path})...`);
 
@@ -1113,6 +1186,10 @@ async function syncWithSupabase() {
     if (syncOrders) {
       promises.push(window.supabaseClient.from('orders').select('*').order('created_at', { ascending: false }));
       keys.push('orders');
+    }
+    if (syncLandingPages) {
+      promises.push(window.supabaseClient.from('landing_pages').select('*'));
+      keys.push('landing_pages');
     }
 
     const results = await Promise.all(promises);
@@ -1219,6 +1296,28 @@ async function syncWithSupabase() {
       if (key === 'orders' && data) {
         localStorage.setItem(DB_KEYS.ORDERS, JSON.stringify(data.map(toCamelCase)));
         window.dispatchEvent(new CustomEvent('nasma:orders-synced'));
+      }
+
+      if (key === 'landing_pages' && data) {
+        if (data.length > 0) {
+          // تحويل صفوف Supabase إلى كائنات داخلية وتخزينها بالمفتاح (productId)
+          const pagesMap = {};
+          data.forEach(row => {
+            const page = LandingPagesDB._fromRow(row);
+            pagesMap[page.productId] = page;
+          });
+          localStorage.setItem(DB_KEYS.LANDING_PAGES, JSON.stringify(pagesMap));
+          console.log(`✅ تم تحميل ${data.length} صفحة هبوط من Supabase.`);
+        } else {
+          // إذا كانت Supabase فارغة — رفع البيانات المحلية إليها
+          const localPages = LandingPagesDB.getAll();
+          const localArr = Object.values(localPages);
+          if (localArr.length > 0) {
+            const rows = localArr.map(p => LandingPagesDB._toRow(p));
+            await window.supabaseClient.from('landing_pages').upsert(rows, { onConflict: 'product_id' });
+            console.log(`☁️ تم رفع ${localArr.length} صفحة هبوط محلية إلى Supabase.`);
+          }
+        }
       }
     }
 
