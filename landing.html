@@ -728,6 +728,43 @@
       }
       orders.unshift(saved);
       localStorage.setItem('nasma_orders', JSON.stringify(orders));
+
+      // ─── رفع الطلب وتحديث الكوبون في Supabase لكي يظهر في لوحة التحكم ───
+      if (_supaLanding) {
+        var row = {
+          id:             saved.id,
+          order_number:   saved.orderNumber,
+          items:          saved.items,
+          customer:       saved.customer,
+          subtotal:       saved.subtotal,
+          discount:       saved.discount,
+          shipping:       saved.shipping,
+          total:          saved.total,
+          coupon_code:    saved.couponCode,
+          payment_method: saved.paymentMethod,
+          status:         saved.status,
+          notes:          saved.notes,
+          source:         saved.source,
+          created_at:     saved.createdAt,
+          updated_at:     saved.updatedAt
+        };
+
+        _supaLanding.from('orders').insert([row]).then(function(res) {
+          if (res.error) {
+            console.error('❌ Supabase order insert error:', res.error);
+          } else {
+            console.log('☁️ Order successfully synced to Supabase!');
+          }
+        });
+
+        if (window.appliedCoupon) {
+          _supaLanding.from('coupons')
+            .update({ used_count: (window.appliedCoupon.usedCount || 0) + 1 })
+            .eq('code', window.appliedCoupon.code)
+            .then(function(){});
+        }
+      }
+
       document.getElementById('success-order-num').textContent = saved.orderNumber;
       document.getElementById('success-overlay').classList.add('show');
       window.scrollTo({ top: 0, behavior: 'smooth' });
