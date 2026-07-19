@@ -261,7 +261,7 @@
             var citiesRes = await _supaLanding.from('shipping_cities').select('*');
             if (citiesRes.data && citiesRes.data.length > 0) {
               shippingCities = citiesRes.data.map(function(c){
-                return { name: c.name, cost: parseFloat(c.cost) || 0 };
+                return { name: c.name || c.name_ar || '', cost: parseFloat(c.cost) || 0 };
               });
             }
           }
@@ -288,6 +288,37 @@
         }
       }
 
+      // ─── قائمة المحافظات الافتراضية كاحتياطي دائم ───
+      var defaultCities = [
+        { name: 'القاهرة', cost: 50 },
+        { name: 'الجيزة', cost: 50 },
+        { name: 'الإسكندرية', cost: 60 },
+        { name: 'القليوبية', cost: 55 },
+        { name: 'الدقهلية', cost: 65 },
+        { name: 'الغربية', cost: 65 },
+        { name: 'المنوفية', cost: 65 },
+        { name: 'الشرقية', cost: 65 },
+        { name: 'البحيرة', cost: 70 },
+        { name: 'دمياط', cost: 70 },
+        { name: 'كفر الشيخ', cost: 70 },
+        { name: 'بورسعيد', cost: 70 },
+        { name: 'الإسماعيلية', cost: 70 },
+        { name: 'السويس', cost: 70 },
+        { name: 'الفيوم', cost: 75 },
+        { name: 'بني سويف', cost: 75 },
+        { name: 'المنيا', cost: 80 },
+        { name: 'أسيوط', cost: 80 },
+        { name: 'سوهاج', cost: 85 },
+        { name: 'قنا', cost: 85 },
+        { name: 'الأقصر', cost: 90 },
+        { name: 'أسوان', cost: 95 },
+        { name: 'البحر الأحمر', cost: 90 },
+        { name: 'الوادي الجديد', cost: 100 },
+        { name: 'مطروح', cost: 100 },
+        { name: 'شمال سيناء', cost: 100 },
+        { name: 'جنوب سيناء', cost: 100 }
+      ];
+
       // ─── احتياطي: قراءة من localStorage ───
       if (!pageConfig) {
         var allPages = dbGet('nasma_landing_pages', {});
@@ -300,6 +331,11 @@
       if (!product) {
         var allProds = dbGet('nasma_products', []);
         product = allProds.find(function(p){ return p.id === pid; }) || null;
+      }
+      
+      // إذا لم يتم تحميل المدن من Supabase أو localStorage، نستخدم القائمة الافتراضية
+      if (!shippingCities || shippingCities.length === 0) {
+        shippingCities = defaultCities;
       }
 
       return { pageConfig: pageConfig, product: product, settings: settings,
