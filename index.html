@@ -600,38 +600,90 @@
       nextBtn.addEventListener('click', () => scrollTo(currentIdx + 1));
     }
 
-    // Touch / Drag للجوال
+    // التمرير والسحب اللمسي اللحظي والسلس للغاية (Real-time Smooth Touch Drag & Flick)
     let startX = 0;
+    let currentDragX = 0;
     let isDragging = false;
-    track.addEventListener('touchstart', e => {
-      startX = e.touches[0].clientX;
+    let dragStartTime = 0;
+
+    function onDragStart(clientX) {
+      startX = clientX;
+      currentDragX = clientX;
       isDragging = true;
-    }, { passive: true });
-    track.addEventListener('touchend', e => {
+      dragStartTime = Date.now();
+      track.style.transition = 'none';
+    }
+
+    function onDragMove(clientX) {
+      if (!isDragging) return;
+      currentDragX = clientX;
+      const diff = startX - currentDragX;
+      const slideW = getSlideWidth();
+      const viewportW = track.parentElement.offsetWidth;
+      const trackW = total * slideW - parseInt(getComputedStyle(track).gap || 24);
+      const maxOffset = Math.max(0, trackW - viewportW);
+      
+      let tempOffset = currentOffset + (isRTL ? -diff : diff);
+      tempOffset = Math.max(-40, Math.min(tempOffset, maxOffset + 40));
+      
+      const transformValue = isRTL ? tempOffset : -tempOffset;
+      track.style.transform = `translateX(${transformValue}px)`;
+    }
+
+    function onDragEnd() {
       if (!isDragging) return;
       isDragging = false;
-      const diff = startX - e.changedTouches[0].clientX;
-      if (Math.abs(diff) > 50) {
-        // في RTL، سحب لليسار يعني العودة للخلف (سالب) وسحب لليمين يعني التقدم (موجب)
+      track.style.transition = 'transform 0.45s cubic-bezier(0.25, 1, 0.5, 1)';
+      const diff = startX - currentDragX;
+      const dragDuration = Date.now() - dragStartTime;
+      
+      // التعرف على السحب السريع (Flick) أو التمرير الطويل
+      if (Math.abs(diff) > 35 || (Math.abs(diff) > 15 && dragDuration < 250)) {
         const step = diff > 0 ? 1 : -1;
         scrollTo(currentIdx + (isRTL ? -step : step));
+      } else {
+        scrollTo(currentIdx);
       }
-    }, { passive: true });
+    }
 
-    // Mouse drag لسطح المكتب
-    let mouseStartX = 0;
-    let mouseDragging = false;
-    track.addEventListener('mousedown', e => { mouseStartX = e.clientX; mouseDragging = true; track.style.cursor = 'grabbing'; });
+    // أحداث اللمس للأجهزة المحمولة والتابلت
+    track.addEventListener('touchstart', e => { if(e.touches && e.touches[0]) onDragStart(e.touches[0].clientX); }, { passive: true });
+    track.addEventListener('touchmove', e => { if(e.touches && e.touches[0]) onDragMove(e.touches[0].clientX); }, { passive: true });
+    track.addEventListener('touchend', onDragEnd, { passive: true });
+
+    // أحداث الماوس لسطح المكتب
+    track.addEventListener('mousedown', e => {
+      onDragStart(e.clientX);
+      track.style.cursor = 'grabbing';
+    });
+    track.addEventListener('mousemove', e => {
+      if (isDragging) onDragMove(e.clientX);
+    });
     track.addEventListener('mouseup', e => {
-      if (!mouseDragging) return;
-      mouseDragging = false; track.style.cursor = 'grab';
-      const diff = mouseStartX - e.clientX;
-      if (Math.abs(diff) > 40) {
-        const step = diff > 0 ? 1 : -1;
-        scrollTo(currentIdx + (isRTL ? -step : step));
+      if (isDragging) {
+        onDragEnd();
+        track.style.cursor = 'grab';
       }
     });
-    track.addEventListener('mouseleave', () => { mouseDragging = false; track.style.cursor = 'grab'; });
+    track.addEventListener('mouseleave', () => {
+      if (isDragging) {
+        onDragEnd();
+        track.style.cursor = 'grab';
+      }
+    });
+
+    // تحديث النقاط تلقائياً على الشاشات الصغيرة عند السحب الأصلي
+    const viewportEl = track.parentElement;
+    if (viewportEl) {
+      viewportEl.addEventListener('scroll', () => {
+        if (window.innerWidth <= 768) {
+          const slideW = getSlideWidth();
+          const scrollPos = isRTL ? Math.abs(viewportEl.scrollLeft) : viewportEl.scrollLeft;
+          const idx = Math.round(scrollPos / slideW);
+          updateDots(idx);
+        }
+      }, { passive: true });
+    }
 
     // بناء نقاط التنقل وتفعيل أول شريحة
     buildDots();

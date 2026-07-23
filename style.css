@@ -2496,10 +2496,25 @@ ul, ol {
   }
 }
 
-/* إخفاء أسهم التمرير على الهواتف والتابلت (<= 768px) لتعمل باللمس فقط */
+/* إخفاء أسهم التمرير وتفعيل السحب التلمسي السلس والسريع على الهواتف والتابلت (<= 768px) */
 @media (max-width: 768px) {
   .cats-nav-btn {
     display: none !important;
+  }
+  .cats-carousel-viewport {
+    overflow-x: auto !important;
+    scroll-snap-type: x mandatory;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+    padding-bottom: 10px;
+  }
+  .cats-carousel-viewport::-webkit-scrollbar {
+    display: none;
+  }
+  .cat-slide {
+    scroll-snap-align: start;
+    scroll-snap-stop: normal;
   }
 }
 
