@@ -476,27 +476,18 @@
     // التحقق من اتجاه الصفحة (RTL) لتحديد اتجاه الإزاحة الصحيح
     const isRTL = document.documentElement.dir === 'rtl' || getComputedStyle(track).direction === 'rtl';
 
-    // تنظيف مستمعي الأحداث القدامى عند إعادة البناء لمنع التكرار وتداخل الأحداث
-    const cleanTrack = track.cloneNode(true);
-    track.parentNode.replaceChild(cleanTrack, track);
-    track = cleanTrack;
-
-    if (prevBtn) {
-      const cleanPrev = prevBtn.cloneNode(true);
-      prevBtn.parentNode.replaceChild(cleanPrev, prevBtn);
-      prevBtn = cleanPrev;
-    }
-    if (nextBtn) {
-      const cleanNext = nextBtn.cloneNode(true);
-      nextBtn.parentNode.replaceChild(cleanNext, nextBtn);
-      nextBtn = cleanNext;
-    }
-
     function getSlideWidth() {
       const slide = track.querySelector('.cat-slide');
-      if (!slide) return 280;
       const gap = parseInt(getComputedStyle(track).gap || 24, 10);
-      return slide.offsetWidth + gap;
+      const measured = slide ? slide.offsetWidth : 0;
+      if (measured > 10) return measured + gap;
+
+      // حساب بديل دقيق في حال عدم اكتمال رسم الهيكل بعد في المتصفح
+      const viewportW = (track.parentElement && track.parentElement.offsetWidth) ? track.parentElement.offsetWidth : window.innerWidth;
+      if (window.innerWidth <= 768) {
+        return Math.min(310, Math.max(240, viewportW * 0.75)) + gap;
+      }
+      return ((viewportW - 2 * gap) / 3) + gap;
     }
 
     const slides = track.querySelectorAll('.cat-slide');
@@ -536,11 +527,11 @@
     function buildDots() {
       if (!dotsEl) return;
       const slideW = getSlideWidth();
-      const viewportW = track.parentElement.offsetWidth;
+      const viewportW = (track.parentElement && track.parentElement.offsetWidth) ? track.parentElement.offsetWidth : window.innerWidth;
       const gap = parseInt(getComputedStyle(track).gap || 24, 10);
       const trackW = total * slideW - gap;
       const maxOffset = Math.max(0, trackW - viewportW);
-      const dotsCount = Math.round(maxOffset / slideW) + 1;
+      const dotsCount = total > 1 ? Math.max(total, Math.round(maxOffset / slideW) + 1) : 0;
 
       if (dotsCount <= 1) {
         dotsEl.style.display = 'none';
@@ -560,30 +551,25 @@
     function scrollTo(idx) {
       if (total === 0) return;
       const slideW = getSlideWidth();
-      const viewportW = track.parentElement.offsetWidth;
+      const viewportW = (track.parentElement && track.parentElement.offsetWidth) ? track.parentElement.offsetWidth : window.innerWidth;
       const gap = parseInt(getComputedStyle(track).gap || 24, 10);
       const trackW = total * slideW - gap;
       const maxOffset = Math.max(0, trackW - viewportW);
 
       const isMobileDevice = window.innerWidth <= 768;
 
-      if (maxOffset <= 0) {
-        currentIdx = 0;
-        currentOffset = 0;
-        track.style.transform = 'translateX(0)';
+      if (isMobileDevice) {
         if (prevBtn) prevBtn.style.display = 'none';
         if (nextBtn) nextBtn.style.display = 'none';
-        if (dotsEl) dotsEl.style.display = 'none';
-        return;
+      } else {
+        if (prevBtn) prevBtn.style.display = 'flex';
+        if (nextBtn) nextBtn.style.display = 'flex';
       }
-
-      if (prevBtn) prevBtn.style.display = isMobileDevice ? 'none' : 'flex';
-      if (nextBtn) nextBtn.style.display = isMobileDevice ? 'none' : 'flex';
 
       currentIdx = Math.max(0, Math.min(idx, total - 1));
 
       let targetOffset = currentIdx * slideW;
-      if (targetOffset > maxOffset) {
+      if (maxOffset > 0 && targetOffset > maxOffset) {
         targetOffset = maxOffset;
         currentIdx = Math.round(targetOffset / slideW);
       }
@@ -594,21 +580,24 @@
 
       updateDots(currentIdx);
 
-      if (prevBtn) {
-        prevBtn.style.opacity = currentIdx === 0 ? '0.35' : '1';
-        prevBtn.style.pointerEvents = currentIdx === 0 ? 'none' : 'auto';
-      }
-      if (nextBtn) {
-        nextBtn.style.opacity = currentOffset >= maxOffset ? '0.35' : '1';
-        nextBtn.style.pointerEvents = currentOffset >= maxOffset ? 'none' : 'auto';
+      if (!isMobileDevice) {
+        if (prevBtn) {
+          prevBtn.style.opacity = currentIdx === 0 ? '0.35' : '1';
+          prevBtn.style.pointerEvents = currentIdx === 0 ? 'none' : 'auto';
+        }
+        if (nextBtn) {
+          const isAtEnd = (maxOffset > 0 && currentOffset >= maxOffset) || (currentIdx >= total - 1);
+          nextBtn.style.opacity = isAtEnd ? '0.35' : '1';
+          nextBtn.style.pointerEvents = isAtEnd ? 'none' : 'auto';
+        }
       }
     }
 
     if (prevBtn) {
-      prevBtn.addEventListener('click', () => scrollTo(currentIdx - 1));
+      prevBtn.onclick = () => scrollTo(currentIdx - 1);
     }
     if (nextBtn) {
-      nextBtn.addEventListener('click', () => scrollTo(currentIdx + 1));
+      nextBtn.onclick = () => scrollTo(currentIdx + 1);
     }
 
     // التمرير والسحب لسطح المكتب والموبايل (Real-time Smooth Drag & Flick)
@@ -648,7 +637,7 @@
         hasDragged = true;
       }
       const slideW = getSlideWidth();
-      const viewportW = track.parentElement.offsetWidth;
+      const viewportW = (track.parentElement && track.parentElement.offsetWidth) ? track.parentElement.offsetWidth : window.innerWidth;
       const gap = parseInt(getComputedStyle(track).gap || 24, 10);
       const trackW = total * slideW - gap;
       const maxOffset = Math.max(0, trackW - viewportW);
@@ -768,6 +757,12 @@
     // بناء نقاط التنقل وتفعيل أول شريحة
     buildDots();
     scrollTo(0);
+
+    // إعادة الضبط بعد رندر المتصفح للتأكد من المحاذاة الدقيقة
+    setTimeout(() => {
+      buildDots();
+      scrollTo(0);
+    }, 100);
   }
 
   document.addEventListener('DOMContentLoaded', () => {
