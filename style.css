@@ -2496,25 +2496,35 @@ ul, ol {
   }
 }
 
-/* إخفاء أسهم التمرير وتفعيل السحب التلمسي السلس والسريع على الهواتف والتابلت (<= 768px) */
+/* إخفاء أسهم التمرير وتفعيل التمرير الانسيابي السلس كالماء على الهواتف والتابلت (<= 768px) */
 @media (max-width: 768px) {
   .cats-nav-btn {
     display: none !important;
   }
   .cats-carousel-viewport {
     overflow-x: auto !important;
-    scroll-snap-type: x mandatory;
+    scroll-behavior: smooth;
     -webkit-overflow-scrolling: touch;
+    overscroll-behavior-x: contain;
     scrollbar-width: none;
     -ms-overflow-style: none;
-    padding-bottom: 10px;
+    padding-bottom: 12px;
   }
   .cats-carousel-viewport::-webkit-scrollbar {
     display: none;
   }
-  .cat-slide {
-    scroll-snap-align: start;
-    scroll-snap-stop: normal;
+  .cats-carousel-track {
+    transform: none !important;
+    transition: none !important;
+    width: max-content;
+  }
+  .cat-slide,
+  .cat-slide-skeleton {
+    flex: 0 0 75% !important;
+    width: 75vw !important;
+    max-width: 310px !important;
+    min-width: 240px !important;
+    flex-shrink: 0 !important;
   }
 }
 
@@ -2558,8 +2568,10 @@ ul, ol {
 
   .cat-slide,
   .cat-slide-skeleton {
-    flex: 0 0 78%;
-    min-width: 0;
+    flex: 0 0 78% !important;
+    width: 78vw !important;
+    max-width: 320px !important;
+    min-width: 240px !important;
     border-radius: 18px;
   }
 

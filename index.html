@@ -646,10 +646,19 @@
       }
     }
 
-    // أحداث اللمس للأجهزة المحمولة والتابلت
-    track.addEventListener('touchstart', e => { if(e.touches && e.touches[0]) onDragStart(e.touches[0].clientX); }, { passive: true });
-    track.addEventListener('touchmove', e => { if(e.touches && e.touches[0]) onDragMove(e.touches[0].clientX); }, { passive: true });
-    track.addEventListener('touchend', onDragEnd, { passive: true });
+    // أحداث اللمس للأجهزة المحمولة والتابلت (ترك التمرير الانسيابي السلس كالماء للمتصفح دون تقطيع)
+    track.addEventListener('touchstart', e => { 
+      if (window.innerWidth <= 768) return;
+      if(e.touches && e.touches[0]) onDragStart(e.touches[0].clientX); 
+    }, { passive: true });
+    track.addEventListener('touchmove', e => { 
+      if (window.innerWidth <= 768) return;
+      if(e.touches && e.touches[0]) onDragMove(e.touches[0].clientX); 
+    }, { passive: true });
+    track.addEventListener('touchend', () => { 
+      if (window.innerWidth <= 768) return;
+      onDragEnd(); 
+    }, { passive: true });
 
     // أحداث الماوس لسطح المكتب
     track.addEventListener('mousedown', e => {
