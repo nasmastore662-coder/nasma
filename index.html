@@ -444,7 +444,7 @@
           role="button"
           tabindex="0"
           aria-label="تصفح ${c.name}"
-          onclick="location.href='products.html?cat=${c.id}'"
+          onclick="if(window.__catWasDragged) return; location.href='products.html?cat=${c.id}'"
           onkeydown="if(event.key==='Enter'||event.key===' ') location.href='products.html?cat=${c.id}'"
           data-index="${i}"
         >
@@ -604,12 +604,14 @@
     let startX = 0;
     let currentDragX = 0;
     let isDragging = false;
+    let wasDragged = false;
     let dragStartTime = 0;
 
     function onDragStart(clientX) {
       startX = clientX;
       currentDragX = clientX;
       isDragging = true;
+      wasDragged = false;
       dragStartTime = Date.now();
       track.style.transition = 'none';
     }
@@ -618,6 +620,9 @@
       if (!isDragging) return;
       currentDragX = clientX;
       const diff = startX - currentDragX;
+      if (Math.abs(diff) > 8) {
+        wasDragged = true;
+      }
       const slideW = getSlideWidth();
       const viewportW = track.parentElement.offsetWidth;
       const trackW = total * slideW - parseInt(getComputedStyle(track).gap || 24);
@@ -636,6 +641,11 @@
       track.style.transition = 'transform 0.45s cubic-bezier(0.25, 1, 0.5, 1)';
       const diff = startX - currentDragX;
       const dragDuration = Date.now() - dragStartTime;
+
+      if (wasDragged) {
+        window.__catWasDragged = true;
+        setTimeout(() => { window.__catWasDragged = false; }, 250);
+      }
       
       // التعرف على السحب السريع (Flick) أو التمرير الطويل
       if (Math.abs(diff) > 35 || (Math.abs(diff) > 15 && dragDuration < 250)) {
@@ -646,17 +656,14 @@
       }
     }
 
-    // أحداث اللمس للأجهزة المحمولة والتابلت (ترك التمرير الانسيابي السلس كالماء للمتصفح دون تقطيع)
+    // أحداث اللمس للأجهزة المحمولة والتابلت والسحب اللمسي الانسيابي
     track.addEventListener('touchstart', e => { 
-      if (window.innerWidth <= 768) return;
-      if(e.touches && e.touches[0]) onDragStart(e.touches[0].clientX); 
+      if (e.touches && e.touches[0]) onDragStart(e.touches[0].clientX); 
     }, { passive: true });
     track.addEventListener('touchmove', e => { 
-      if (window.innerWidth <= 768) return;
-      if(e.touches && e.touches[0]) onDragMove(e.touches[0].clientX); 
+      if (e.touches && e.touches[0]) onDragMove(e.touches[0].clientX); 
     }, { passive: true });
     track.addEventListener('touchend', () => { 
-      if (window.innerWidth <= 768) return;
       onDragEnd(); 
     }, { passive: true });
 
@@ -681,18 +688,11 @@
       }
     });
 
-    // تحديث النقاط تلقائياً على الشاشات الصغيرة عند السحب الأصلي
-    const viewportEl = track.parentElement;
-    if (viewportEl) {
-      viewportEl.addEventListener('scroll', () => {
-        if (window.innerWidth <= 768) {
-          const slideW = getSlideWidth();
-          const scrollPos = isRTL ? Math.abs(viewportEl.scrollLeft) : viewportEl.scrollLeft;
-          const idx = Math.round(scrollPos / slideW);
-          updateDots(idx);
-        }
-      }, { passive: true });
-    }
+    // إضافة مستمع لـ window resize لإعادة المحاذاة عند تغيير حجم الشاشة أو تدوير الهاتف
+    window.addEventListener('resize', () => {
+      buildDots();
+      scrollTo(currentIdx);
+    });
 
     // بناء نقاط التنقل وتفعيل أول شريحة
     buildDots();
