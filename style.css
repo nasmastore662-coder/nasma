@@ -890,29 +890,37 @@ ul, ol {
   padding: 0 0 var(--space-4);
 }
 
-/* مسار الشرائح — يحجب الفائض */
+/* مسار الشرائح — يحجب الفائض والتمرير الانسيابي مثل تطبيقات التسوق العالمية (نون) */
 .cats-carousel-viewport {
-  overflow: hidden;
+  overflow-x: auto;
+  overflow-y: hidden;
   width: 100%;
-  touch-action: pan-y;
+  scroll-behavior: smooth;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+  scroll-snap-type: x proximity;
+  touch-action: pan-x pan-y;
+  padding-bottom: 12px;
+}
+.cats-carousel-viewport::-webkit-scrollbar {
+  display: none;
 }
 
 /* مسار الشرائح */
 .cats-carousel-track {
   display: flex;
   gap: var(--space-6);
-  transition: transform 0.45s cubic-bezier(0.25, 0.46, 0.45, 0.94);
-  will-change: transform;
-  cursor: grab;
-  padding: 8px 2px 20px 2px;
-  touch-action: pan-y;
+  width: max-content;
+  padding: 8px 4px 20px 4px;
 }
-.cats-carousel-track:active { cursor: grabbing; }
 
 /* بطاقة التصنيف */
 .cat-slide {
   flex: 0 0 calc((100% - 2 * var(--space-6)) / 3);
   min-width: 250px;
+  scroll-snap-align: start;
+  scroll-snap-stop: normal;
   position: relative;
   border-radius: 20px;
   overflow: hidden;
@@ -2498,28 +2506,29 @@ ul, ol {
   }
 }
 
-/* إخفاء أسهم التمرير وتفعيل التمرير الانسيابي اللمسي السلس على الهواتف والتابلت (<= 768px) */
+/* إخفاء أسهم التمرير وتفعيل التمرير الانسيابي اللمسي السلس على الهواتف والتابلت مثل نون (<= 768px) */
 @media (max-width: 768px) {
   .cats-nav-btn {
     display: none !important;
   }
   .cats-carousel-viewport {
-    overflow: hidden;
-    touch-action: pan-y;
+    overflow-x: auto !important;
+    overflow-y: hidden;
+    scroll-snap-type: x proximity;
     padding-bottom: 12px;
   }
   .cats-carousel-track {
-    touch-action: pan-y;
     width: max-content;
+    gap: var(--space-4);
   }
   .cat-slide,
   .cat-slide-skeleton {
-    flex: 0 0 calc(78vw - 12px) !important;
-    width: calc(78vw - 12px) !important;
-    max-width: 320px !important;
-    min-width: 230px !important;
+    flex: 0 0 calc(75vw - 16px) !important;
+    width: calc(75vw - 16px) !important;
+    max-width: 290px !important;
+    min-width: 210px !important;
     flex-shrink: 0 !important;
-    touch-action: pan-y;
+    scroll-snap-align: start;
   }
 }
 

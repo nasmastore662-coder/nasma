@@ -468,235 +468,147 @@
   }
 
   function initCatsCarousel() {
-    let track    = document.getElementById('cats-carousel-track');
-    let prevBtn  = document.getElementById('cats-prev-btn');
-    let nextBtn  = document.getElementById('cats-next-btn');
-    const dotsEl   = document.getElementById('cats-dots');
-    if (!track) return;
+    const track = document.getElementById('cats-carousel-track');
+    const viewport = track ? track.parentElement : null;
+    const prevBtn = document.getElementById('cats-prev-btn');
+    const nextBtn = document.getElementById('cats-next-btn');
+    const dotsEl  = document.getElementById('cats-dots');
 
-    // التحقق من اتجاه الصفحة (RTL) لتحديد اتجاه الإزاحة الصحيح
+    if (!track || !viewport) return;
+
     const isRTL = document.documentElement.dir === 'rtl' || getComputedStyle(track).direction === 'rtl';
-
-    // تنظيف مستمعي الأحداث القدامى عند إعادة البناء لمنع التكرار وتداخل الأحداث
-    const cleanTrack = track.cloneNode(true);
-    track.parentNode.replaceChild(cleanTrack, track);
-    track = cleanTrack;
-
-    if (prevBtn) {
-      const cleanPrev = prevBtn.cloneNode(true);
-      prevBtn.parentNode.replaceChild(cleanPrev, prevBtn);
-      prevBtn = cleanPrev;
-    }
-    if (nextBtn) {
-      const cleanNext = nextBtn.cloneNode(true);
-      nextBtn.parentNode.replaceChild(cleanNext, nextBtn);
-      nextBtn = cleanNext;
-    }
-
-    function getSlideWidth() {
-      const slide = track.querySelector('.cat-slide');
-      if (!slide) return 280;
-      return slide.offsetWidth + parseInt(getComputedStyle(track).gap || 24);
-    }
-
-    function getVisibleSlides() {
-      const w = track.parentElement.offsetWidth;
-      if (w >= 1024) return 3;
-      if (w >= 640)  return 2;
-      return 1.2;
-    }
-
-    const slides = track.querySelectorAll('.cat-slide');
-    const total  = slides.length;
+    const slides = Array.from(track.querySelectorAll('.cat-slide'));
+    const total = slides.length;
     let currentIdx = 0;
-    let currentOffset = 0;
 
-    function updateDots(idx) {
+    function updateDots(activeIdx) {
       if (!dotsEl) return;
+      currentIdx = activeIdx;
       dotsEl.querySelectorAll('.cats-dot').forEach((d, i) => {
-        d.classList.toggle('active', i === idx);
+        d.classList.toggle('active', i === activeIdx);
       });
     }
 
     function buildDots() {
-      if (!dotsEl) return;
-      const slideW = getSlideWidth();
-      const viewportW = track.parentElement.offsetWidth;
-      const trackW = total * slideW - parseInt(getComputedStyle(track).gap || 24);
-      const maxOffset = Math.max(0, trackW - viewportW);
-      const dotsCount = Math.round(maxOffset / slideW) + 1;
-
-      if (dotsCount <= 1) {
-        dotsEl.style.display = 'none';
-        return;
-      }
-
-      dotsEl.style.display = 'flex';
-      dotsEl.innerHTML = Array.from({ length: dotsCount }).map((_, i) =>
-        `<button class="cats-dot${i === currentIdx ? ' active' : ''}" data-idx="${i}" aria-label="الشريحة ${i + 1}"></button>`
-      ).join('');
-
-      // ربط أحداث النقر للـ dots
-      dotsEl.querySelectorAll('.cats-dot').forEach(dot => {
-        dot.addEventListener('click', () => scrollTo(+dot.dataset.idx));
-      });
-    }
-
-    function scrollTo(idx) {
-      if (total === 0) return;
-      const slideW = getSlideWidth();
-      const viewportW = track.parentElement.offsetWidth;
-      const trackW = total * slideW - parseInt(getComputedStyle(track).gap || 24);
-      const maxOffset = Math.max(0, trackW - viewportW);
-
-      // عدم إظهار الأسهم على الشاشات الصغيرة (الأجهزة المحمولة والتابلت <= 768px)
-      const isMobileDevice = window.innerWidth <= 768;
-
-      // إذا كان إجمالي الشرائح يناسب الشاشة بالكامل، لا حاجة للتمرير
-      if (maxOffset <= 0) {
-        currentIdx = 0;
-        currentOffset = 0;
-        track.style.transform = 'translateX(0)';
-        if (prevBtn) prevBtn.style.display = 'none';
-        if (nextBtn) nextBtn.style.display = 'none';
+      if (!dotsEl || total <= 1) {
         if (dotsEl) dotsEl.style.display = 'none';
         return;
       }
 
-      if (prevBtn) prevBtn.style.display = isMobileDevice ? 'none' : 'flex';
-      if (nextBtn) nextBtn.style.display = isMobileDevice ? 'none' : 'flex';
-      
-      currentIdx = Math.max(0, Math.min(idx, total - 1));
-      
-      let targetOffset = currentIdx * slideW;
-      if (targetOffset > maxOffset) {
-        targetOffset = maxOffset;
-        currentIdx = Math.round(targetOffset / slideW);
-      }
+      dotsEl.style.display = 'flex';
+      dotsEl.innerHTML = slides.map((_, i) =>
+        `<button class="cats-dot${i === 0 ? ' active' : ''}" data-idx="${i}" aria-label="الشريحة ${i + 1}"></button>`
+      ).join('');
 
-      currentOffset = targetOffset;
-      // في اتجاه RTL تكون الإزاحة موجبة لتحريك العناصر لليمين وإظهار العناصر الفائضة من اليسار
-      const transformValue = isRTL ? currentOffset : -currentOffset;
-      track.style.transform = `translateX(${transformValue}px)`;
-      
-      updateDots(currentIdx);
+      dotsEl.querySelectorAll('.cats-dot').forEach(dot => {
+        dot.addEventListener('click', () => {
+          const idx = +dot.dataset.idx;
+          if (slides[idx]) {
+            slides[idx].scrollIntoView({ behavior: 'smooth', inline: 'start', block: 'nearest' });
+            updateDots(idx);
+          }
+        });
+      });
+    }
 
-      // تعطيل/تفعيل الأزرار وتعتيمها عند البداية أو النهاية
-      if (prevBtn) {
-        prevBtn.style.opacity = currentIdx === 0 ? '0.35' : '1';
-        prevBtn.style.pointerEvents = currentIdx === 0 ? 'none' : 'auto';
-      }
-      if (nextBtn) {
-        nextBtn.style.opacity = currentOffset >= maxOffset ? '0.35' : '1';
-        nextBtn.style.pointerEvents = currentOffset >= maxOffset ? 'none' : 'auto';
+    function scrollToSlide(idx) {
+      const targetIdx = Math.max(0, Math.min(idx, total - 1));
+      if (slides[targetIdx]) {
+        slides[targetIdx].scrollIntoView({ behavior: 'smooth', inline: 'start', block: 'nearest' });
+        updateDots(targetIdx);
       }
     }
 
-    // أزرار التنقل
     if (prevBtn) {
-      prevBtn.addEventListener('click', () => scrollTo(currentIdx - 1));
+      prevBtn.style.display = window.innerWidth <= 768 ? 'none' : 'flex';
+      prevBtn.onclick = () => scrollToSlide(currentIdx - 1);
     }
     if (nextBtn) {
-      nextBtn.addEventListener('click', () => scrollTo(currentIdx + 1));
+      nextBtn.style.display = window.innerWidth <= 768 ? 'none' : 'flex';
+      nextBtn.onclick = () => scrollToSlide(currentIdx + 1);
     }
 
-    // التمرير والسحب اللمسي اللحظي والسلس للغاية (Real-time Smooth Touch Drag & Flick)
+    // تحديث النقاط النشطة تلقائياً أثناء التمرير الانسيابي السلس مثل نون
+    let isTicking = false;
+    const handleScroll = () => {
+      if (!isTicking) {
+        window.requestAnimationFrame(() => {
+          updateActiveDotOnScroll();
+          isTicking = false;
+        });
+        isTicking = true;
+      }
+    };
+
+    function updateActiveDotOnScroll() {
+      if (!viewport || slides.length === 0) return;
+      const viewportRect = viewport.getBoundingClientRect();
+      let closestIdx = 0;
+      let minDistance = Infinity;
+
+      slides.forEach((slide, idx) => {
+        const slideRect = slide.getBoundingClientRect();
+        const slideStart = isRTL ? slideRect.right : slideRect.left;
+        const viewportStart = isRTL ? viewportRect.right : viewportRect.left;
+        const dist = Math.abs(slideStart - viewportStart);
+
+        if (dist < minDistance) {
+          minDistance = dist;
+          closestIdx = idx;
+        }
+      });
+
+      updateDots(closestIdx);
+    }
+
+    viewport.addEventListener('scroll', handleScroll, { passive: true });
+
+    // سحب الماوس لسطح المكتب بنفس السلاسة (Drag to scroll)
+    let isMouseDown = false;
     let startX = 0;
-    let currentDragX = 0;
-    let isDragging = false;
-    let wasDragged = false;
-    let dragStartTime = 0;
+    let scrollLeftStart = 0;
+    let hasDraggedMouse = false;
 
-    function onDragStart(clientX) {
-      startX = clientX;
-      currentDragX = clientX;
-      isDragging = true;
-      wasDragged = false;
-      dragStartTime = Date.now();
-      track.style.transition = 'none';
-    }
-
-    function onDragMove(clientX) {
-      if (!isDragging) return;
-      currentDragX = clientX;
-      const diff = startX - currentDragX;
-      if (Math.abs(diff) > 8) {
-        wasDragged = true;
-      }
-      const slideW = getSlideWidth();
-      const viewportW = track.parentElement.offsetWidth;
-      const trackW = total * slideW - parseInt(getComputedStyle(track).gap || 24);
-      const maxOffset = Math.max(0, trackW - viewportW);
-      
-      let tempOffset = currentOffset + (isRTL ? -diff : diff);
-      tempOffset = Math.max(-40, Math.min(tempOffset, maxOffset + 40));
-      
-      const transformValue = isRTL ? tempOffset : -tempOffset;
-      track.style.transform = `translateX(${transformValue}px)`;
-    }
-
-    function onDragEnd() {
-      if (!isDragging) return;
-      isDragging = false;
-      track.style.transition = 'transform 0.45s cubic-bezier(0.25, 1, 0.5, 1)';
-      const diff = startX - currentDragX;
-      const dragDuration = Date.now() - dragStartTime;
-
-      if (wasDragged) {
-        window.__catWasDragged = true;
-        setTimeout(() => { window.__catWasDragged = false; }, 250);
-      }
-      
-      // التعرف على السحب السريع (Flick) أو التمرير الطويل
-      if (Math.abs(diff) > 35 || (Math.abs(diff) > 15 && dragDuration < 250)) {
-        const step = diff > 0 ? 1 : -1;
-        scrollTo(currentIdx + (isRTL ? -step : step));
-      } else {
-        scrollTo(currentIdx);
-      }
-    }
-
-    // أحداث اللمس للأجهزة المحمولة والتابلت والسحب اللمسي الانسيابي
-    track.addEventListener('touchstart', e => { 
-      if (e.touches && e.touches[0]) onDragStart(e.touches[0].clientX); 
-    }, { passive: true });
-    track.addEventListener('touchmove', e => { 
-      if (e.touches && e.touches[0]) onDragMove(e.touches[0].clientX); 
-    }, { passive: true });
-    track.addEventListener('touchend', () => { 
-      onDragEnd(); 
-    }, { passive: true });
-
-    // أحداث الماوس لسطح المكتب
-    track.addEventListener('mousedown', e => {
-      onDragStart(e.clientX);
-      track.style.cursor = 'grabbing';
+    viewport.addEventListener('mousedown', e => {
+      isMouseDown = true;
+      hasDraggedMouse = false;
+      startX = e.pageX - viewport.offsetLeft;
+      scrollLeftStart = viewport.scrollLeft;
+      viewport.style.cursor = 'grabbing';
+      viewport.style.scrollSnapType = 'none';
     });
-    track.addEventListener('mousemove', e => {
-      if (isDragging) onDragMove(e.clientX);
-    });
-    track.addEventListener('mouseup', e => {
-      if (isDragging) {
-        onDragEnd();
-        track.style.cursor = 'grab';
-      }
-    });
-    track.addEventListener('mouseleave', () => {
-      if (isDragging) {
-        onDragEnd();
-        track.style.cursor = 'grab';
+
+    viewport.addEventListener('mouseleave', () => {
+      if (isMouseDown) {
+        isMouseDown = false;
+        viewport.style.cursor = 'grab';
+        viewport.style.scrollSnapType = 'x proximity';
       }
     });
 
-    // إضافة مستمع لـ window resize لإعادة المحاذاة عند تغيير حجم الشاشة أو تدوير الهاتف
-    window.addEventListener('resize', () => {
-      buildDots();
-      scrollTo(currentIdx);
+    viewport.addEventListener('mouseup', () => {
+      if (isMouseDown) {
+        isMouseDown = false;
+        viewport.style.cursor = 'grab';
+        viewport.style.scrollSnapType = 'x proximity';
+        if (hasDraggedMouse) {
+          window.__catWasDragged = true;
+          setTimeout(() => { window.__catWasDragged = false; }, 200);
+        }
+      }
     });
 
-    // بناء نقاط التنقل وتفعيل أول شريحة
+    viewport.addEventListener('mousemove', e => {
+      if (!isMouseDown) return;
+      const x = e.pageX - viewport.offsetLeft;
+      const walk = (x - startX) * 1.4;
+      if (Math.abs(walk) > 5) {
+        hasDraggedMouse = true;
+      }
+      viewport.scrollLeft = scrollLeftStart - walk;
+    });
+
     buildDots();
-    scrollTo(0);
   }
 
   document.addEventListener('DOMContentLoaded', () => {
