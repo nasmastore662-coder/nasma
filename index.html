@@ -670,7 +670,7 @@
       }, 100);
     }
 
-    // أحداث اللمس (موبايل / تاب)
+    // أحداث اللمس (موبايل / تاب / شاشة لمس)
     let touchStartX = 0;
     let touchStartY = 0;
 
@@ -678,9 +678,7 @@
       if (e.touches && e.touches[0]) {
         touchStartX = e.touches[0].clientX;
         touchStartY = e.touches[0].clientY;
-      }
-      if (window.innerWidth > 768) {
-        if (e.touches && e.touches[0]) onDragStart(e.touches[0].clientX);
+        onDragStart(e.touches[0].clientX);
       }
     }, { passive: true });
 
@@ -691,22 +689,12 @@
         if (diffX > 6 || diffY > 6) {
           hasDragged = true;
         }
-      }
-      if (window.innerWidth > 768) {
-        if (e.touches && e.touches[0]) onDragMove(e.touches[0].clientX);
+        onDragMove(e.touches[0].clientX);
       }
     }, { passive: true });
 
     track.addEventListener('touchend', () => {
-      if (window.innerWidth > 768) {
-        onDragEnd();
-      } else {
-        if (hasDragged) {
-          setTimeout(() => {
-            hasDragged = false;
-          }, 200);
-        }
-      }
+      onDragEnd();
     }, { passive: true });
 
     // أحداث الماوس لسطح المكتب
