@@ -444,8 +444,7 @@
           role="button"
           tabindex="0"
           aria-label="تصفح ${c.name}"
-          onclick="location.href='products.html?cat=${c.id}'"
-          onkeydown="if(event.key==='Enter'||event.key===' ') location.href='products.html?cat=${c.id}'"
+          data-cat-id="${c.id}"
           data-index="${i}"
         >
           <div class="cat-slide-tag" title="${c.name}">${c.icon || '✦'}</div>
@@ -496,20 +495,36 @@
     function getSlideWidth() {
       const slide = track.querySelector('.cat-slide');
       if (!slide) return 280;
-      return slide.offsetWidth + parseInt(getComputedStyle(track).gap || 24);
-    }
-
-    function getVisibleSlides() {
-      const w = track.parentElement.offsetWidth;
-      if (w >= 1024) return 3;
-      if (w >= 640)  return 2;
-      return 1.2;
+      const gap = parseInt(getComputedStyle(track).gap || 24, 10);
+      return slide.offsetWidth + gap;
     }
 
     const slides = track.querySelectorAll('.cat-slide');
     const total  = slides.length;
     let currentIdx = 0;
     let currentOffset = 0;
+    let hasDragged = false;
+
+    // معالجة النقر على الكروت للانتفال للتصنيف ومنع الانتقال إذا كان المستخدم يسحب السلايدر
+    slides.forEach(slide => {
+      slide.addEventListener('click', (e) => {
+        if (hasDragged) {
+          e.preventDefault();
+          e.stopPropagation();
+          return;
+        }
+        const catId = slide.dataset.catId;
+        if (catId) {
+          location.href = `products.html?cat=${catId}`;
+        }
+      });
+      slide.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter' || e.key === ' ') {
+          const catId = slide.dataset.catId;
+          if (catId) location.href = `products.html?cat=${catId}`;
+        }
+      });
+    });
 
     function updateDots(idx) {
       if (!dotsEl) return;
@@ -522,7 +537,8 @@
       if (!dotsEl) return;
       const slideW = getSlideWidth();
       const viewportW = track.parentElement.offsetWidth;
-      const trackW = total * slideW - parseInt(getComputedStyle(track).gap || 24);
+      const gap = parseInt(getComputedStyle(track).gap || 24, 10);
+      const trackW = total * slideW - gap;
       const maxOffset = Math.max(0, trackW - viewportW);
       const dotsCount = Math.round(maxOffset / slideW) + 1;
 
@@ -536,7 +552,6 @@
         `<button class="cats-dot${i === currentIdx ? ' active' : ''}" data-idx="${i}" aria-label="الشريحة ${i + 1}"></button>`
       ).join('');
 
-      // ربط أحداث النقر للـ dots
       dotsEl.querySelectorAll('.cats-dot').forEach(dot => {
         dot.addEventListener('click', () => scrollTo(+dot.dataset.idx));
       });
@@ -546,13 +561,12 @@
       if (total === 0) return;
       const slideW = getSlideWidth();
       const viewportW = track.parentElement.offsetWidth;
-      const trackW = total * slideW - parseInt(getComputedStyle(track).gap || 24);
+      const gap = parseInt(getComputedStyle(track).gap || 24, 10);
+      const trackW = total * slideW - gap;
       const maxOffset = Math.max(0, trackW - viewportW);
 
-      // عدم إظهار الأسهم على الشاشات الصغيرة (الأجهزة المحمولة والتابلت <= 768px)
       const isMobileDevice = window.innerWidth <= 768;
 
-      // إذا كان إجمالي الشرائح يناسب الشاشة بالكامل، لا حاجة للتمرير
       if (maxOffset <= 0) {
         currentIdx = 0;
         currentOffset = 0;
@@ -565,9 +579,9 @@
 
       if (prevBtn) prevBtn.style.display = isMobileDevice ? 'none' : 'flex';
       if (nextBtn) nextBtn.style.display = isMobileDevice ? 'none' : 'flex';
-      
+
       currentIdx = Math.max(0, Math.min(idx, total - 1));
-      
+
       let targetOffset = currentIdx * slideW;
       if (targetOffset > maxOffset) {
         targetOffset = maxOffset;
@@ -575,13 +589,11 @@
       }
 
       currentOffset = targetOffset;
-      // في اتجاه RTL تكون الإزاحة موجبة لتحريك العناصر لليمين وإظهار العناصر الفائضة من اليسار
       const transformValue = isRTL ? currentOffset : -currentOffset;
       track.style.transform = `translateX(${transformValue}px)`;
-      
+
       updateDots(currentIdx);
 
-      // تعطيل/تفعيل الأزرار وتعتيمها عند البداية أو النهاية
       if (prevBtn) {
         prevBtn.style.opacity = currentIdx === 0 ? '0.35' : '1';
         prevBtn.style.pointerEvents = currentIdx === 0 ? 'none' : 'auto';
@@ -592,7 +604,6 @@
       }
     }
 
-    // أزرار التنقل
     if (prevBtn) {
       prevBtn.addEventListener('click', () => scrollTo(currentIdx - 1));
     }
@@ -600,7 +611,7 @@
       nextBtn.addEventListener('click', () => scrollTo(currentIdx + 1));
     }
 
-    // التمرير والسحب اللمسي اللحظي والسلس للغاية (Real-time Smooth Touch Drag & Flick)
+    // التمرير والسحب لسطح المكتب والموبايل (Real-time Smooth Drag & Flick)
     let startX = 0;
     let currentDragX = 0;
     let isDragging = false;
@@ -612,20 +623,39 @@
       isDragging = true;
       dragStartTime = Date.now();
       track.style.transition = 'none';
+
+      window.addEventListener('mousemove', onWindowMouseMove);
+      window.addEventListener('mouseup', onWindowMouseUp);
+    }
+
+    function onWindowMouseMove(e) {
+      if (!isDragging) return;
+      onDragMove(e.clientX);
+    }
+
+    function onWindowMouseUp() {
+      if (!isDragging) return;
+      onDragEnd();
+      window.removeEventListener('mousemove', onWindowMouseMove);
+      window.removeEventListener('mouseup', onWindowMouseUp);
     }
 
     function onDragMove(clientX) {
       if (!isDragging) return;
       currentDragX = clientX;
       const diff = startX - currentDragX;
+      if (Math.abs(diff) > 6) {
+        hasDragged = true;
+      }
       const slideW = getSlideWidth();
       const viewportW = track.parentElement.offsetWidth;
-      const trackW = total * slideW - parseInt(getComputedStyle(track).gap || 24);
+      const gap = parseInt(getComputedStyle(track).gap || 24, 10);
+      const trackW = total * slideW - gap;
       const maxOffset = Math.max(0, trackW - viewportW);
-      
+
       let tempOffset = currentOffset + (isRTL ? -diff : diff);
       tempOffset = Math.max(-40, Math.min(tempOffset, maxOffset + 40));
-      
+
       const transformValue = isRTL ? tempOffset : -tempOffset;
       track.style.transform = `translateX(${transformValue}px)`;
     }
@@ -634,56 +664,66 @@
       if (!isDragging) return;
       isDragging = false;
       track.style.transition = 'transform 0.45s cubic-bezier(0.25, 1, 0.5, 1)';
+      track.style.cursor = 'grab';
+
       const diff = startX - currentDragX;
       const dragDuration = Date.now() - dragStartTime;
-      
-      // التعرف على السحب السريع (Flick) أو التمرير الطويل
+
       if (Math.abs(diff) > 35 || (Math.abs(diff) > 15 && dragDuration < 250)) {
         const step = diff > 0 ? 1 : -1;
         scrollTo(currentIdx + (isRTL ? -step : step));
       } else {
         scrollTo(currentIdx);
       }
+
+      setTimeout(() => {
+        hasDragged = false;
+      }, 100);
     }
 
-    // أحداث اللمس للأجهزة المحمولة والتابلت (ترك التمرير الانسيابي السلس كالماء للمتصفح دون تقطيع)
-    track.addEventListener('touchstart', e => { 
+    // أحداث اللمس (موبايل / تاب)
+    track.addEventListener('touchstart', e => {
       if (window.innerWidth <= 768) return;
-      if(e.touches && e.touches[0]) onDragStart(e.touches[0].clientX); 
+      if (e.touches && e.touches[0]) onDragStart(e.touches[0].clientX);
     }, { passive: true });
-    track.addEventListener('touchmove', e => { 
+    track.addEventListener('touchmove', e => {
       if (window.innerWidth <= 768) return;
-      if(e.touches && e.touches[0]) onDragMove(e.touches[0].clientX); 
+      if (e.touches && e.touches[0]) onDragMove(e.touches[0].clientX);
     }, { passive: true });
-    track.addEventListener('touchend', () => { 
+    track.addEventListener('touchend', () => {
       if (window.innerWidth <= 768) return;
-      onDragEnd(); 
+      onDragEnd();
     }, { passive: true });
 
     // أحداث الماوس لسطح المكتب
     track.addEventListener('mousedown', e => {
+      if (e.button !== 0) return;
       onDragStart(e.clientX);
       track.style.cursor = 'grabbing';
     });
-    track.addEventListener('mousemove', e => {
-      if (isDragging) onDragMove(e.clientX);
-    });
-    track.addEventListener('mouseup', e => {
-      if (isDragging) {
-        onDragEnd();
-        track.style.cursor = 'grab';
-      }
-    });
-    track.addEventListener('mouseleave', () => {
-      if (isDragging) {
-        onDragEnd();
-        track.style.cursor = 'grab';
-      }
-    });
 
-    // تحديث النقاط تلقائياً على الشاشات الصغيرة عند السحب الأصلي
+    // التمرير بعجلة الماوس على جهاز الكومبيوتر
     const viewportEl = track.parentElement;
     if (viewportEl) {
+      let wheelTimeout = null;
+      viewportEl.addEventListener('wheel', e => {
+        if (window.innerWidth <= 768) return;
+        const delta = Math.abs(e.deltaX) > Math.abs(e.deltaY) ? e.deltaX : e.deltaY;
+        if (Math.abs(delta) < 15) return;
+
+        if (!wheelTimeout) {
+          if (delta > 0) {
+            scrollTo(currentIdx + (isRTL ? -1 : 1));
+          } else {
+            scrollTo(currentIdx + (isRTL ? 1 : -1));
+          }
+          wheelTimeout = setTimeout(() => {
+            wheelTimeout = null;
+          }, 300);
+        }
+      }, { passive: true });
+
+      // تحديث النقاط تلقائياً على الشاشات الصغيرة عند السحب الأصلي
       viewportEl.addEventListener('scroll', () => {
         if (window.innerWidth <= 768) {
           const slideW = getSlideWidth();
@@ -693,6 +733,12 @@
         }
       }, { passive: true });
     }
+
+    // إعادة الضبط عند تغيير حجم الشاشة
+    window.addEventListener('resize', () => {
+      buildDots();
+      scrollTo(currentIdx);
+    });
 
     // بناء نقاط التنقل وتفعيل أول شريحة
     buildDots();
