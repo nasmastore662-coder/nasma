@@ -3166,7 +3166,7 @@ function buildLandingPageHTML(product, config, settings) {
     var appliedCoupon = null;
     var discountAmount = 0;
 
-    function formatP(n) { return n.toLocaleString('ar-EG') + ' ج.م'; }
+    function formatP(n) { return n.toLocaleString('ar-EG').replace(/[\u066C\u066B٫‘’]/g, '،') + ' ج.م'; }
 
     function calcTotal() {
       var sub = unitPrice * currentQty;

@@ -1037,10 +1037,11 @@ const AdminAuth = {
    أدوات مساعدة مشتركة
    =========================================== */
 function formatPrice(amount, currency = 'ج.م') {
-  return `${parseFloat(amount || 0).toLocaleString('ar-EG', {
+  const formatted = parseFloat(amount || 0).toLocaleString('ar-EG', {
     minimumFractionDigits: 0,
     maximumFractionDigits: 2
-  })} ${currency}`;
+  });
+  return `${formatted.replace(/[\u066C\u066B٫‘’]/g, '،')} ${currency}`;
 }
 
 function slugify(text) {

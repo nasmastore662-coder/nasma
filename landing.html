@@ -187,7 +187,8 @@
     }
 
     function formatP(n) {
-      return parseFloat(n || 0).toLocaleString('ar-EG', { minimumFractionDigits: 0, maximumFractionDigits: 2 }) + ' ج.م';
+      const formatted = parseFloat(n || 0).toLocaleString('ar-EG', { minimumFractionDigits: 0, maximumFractionDigits: 2 });
+      return formatted.replace(/[\u066C\u066B٫‘’]/g, '،') + ' ج.م';
     }
 
     // ─── تحميل البيانات (Supabase أولاً ثم localStorage) ───
@@ -594,7 +595,8 @@
 
   // ─── دوال الصفحة العامة ───
   function formatPG(n) {
-    return parseFloat(n || 0).toLocaleString('ar-EG', { minimumFractionDigits: 0, maximumFractionDigits: 2 }) + ' ج.م';
+    const formatted = parseFloat(n || 0).toLocaleString('ar-EG', { minimumFractionDigits: 0, maximumFractionDigits: 2 });
+    return formatted.replace(/[\u066C\u066B٫‘’]/g, '،') + ' ج.م';
   }
 
 
