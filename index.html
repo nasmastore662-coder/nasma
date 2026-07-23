@@ -682,17 +682,42 @@
     }
 
     // أحداث اللمس (موبايل / تاب)
+    let touchStartX = 0;
+    let touchStartY = 0;
+
     track.addEventListener('touchstart', e => {
-      if (window.innerWidth <= 768) return;
-      if (e.touches && e.touches[0]) onDragStart(e.touches[0].clientX);
+      if (e.touches && e.touches[0]) {
+        touchStartX = e.touches[0].clientX;
+        touchStartY = e.touches[0].clientY;
+      }
+      if (window.innerWidth > 768) {
+        if (e.touches && e.touches[0]) onDragStart(e.touches[0].clientX);
+      }
     }, { passive: true });
+
     track.addEventListener('touchmove', e => {
-      if (window.innerWidth <= 768) return;
-      if (e.touches && e.touches[0]) onDragMove(e.touches[0].clientX);
+      if (e.touches && e.touches[0]) {
+        const diffX = Math.abs(e.touches[0].clientX - touchStartX);
+        const diffY = Math.abs(e.touches[0].clientY - touchStartY);
+        if (diffX > 6 || diffY > 6) {
+          hasDragged = true;
+        }
+      }
+      if (window.innerWidth > 768) {
+        if (e.touches && e.touches[0]) onDragMove(e.touches[0].clientX);
+      }
     }, { passive: true });
+
     track.addEventListener('touchend', () => {
-      if (window.innerWidth <= 768) return;
-      onDragEnd();
+      if (window.innerWidth > 768) {
+        onDragEnd();
+      } else {
+        if (hasDragged) {
+          setTimeout(() => {
+            hasDragged = false;
+          }, 200);
+        }
+      }
     }, { passive: true });
 
     // أحداث الماوس لسطح المكتب
