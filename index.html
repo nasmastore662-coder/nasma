@@ -190,81 +190,34 @@
         <p class="section-desc">تشكيلة منتخبة بعناية من أرقى الماركات والتصاميم العصرية</p>
       </header>
 
-      <div class="categories-grid">
+      <!-- Carousel Wrapper -->
+      <div class="cats-carousel-outer">
+        <!-- زر السابق -->
+        <button class="cats-nav-btn cats-prev" id="cats-prev-btn" aria-label="السابق">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="m9 18 6-6-6-6"/></svg>
+        </button>
 
-        <!-- عبايات -->
-        <article class="category-card animate-on-scroll" role="button" tabindex="0" aria-label="تصفح العبايات" id="cat-abaya">
-          <picture>
-            <source srcset="assets/images/cat-abaya.avif" type="image/avif">
-            <source srcset="assets/images/cat-abaya.webp" type="image/webp">
-            <img
-              src="assets/images/cat-abaya.png"
-              alt="تصنيف العبايات"
-              width="600" height="600"
-              loading="lazy"
-              decoding="async"
-            >
-          </picture>
-          <div class="category-overlay"></div>
-          <div class="category-content">
-            <h3 class="category-name">العبايات</h3>
-            <p class="category-count">+120 قطعة</p>
-            <span class="category-arrow">
-              تسوقي الآن
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m15 18-6-6 6-6"/></svg>
-            </span>
+        <!-- Viewport: يحجب الفائض -->
+        <div class="cats-carousel-viewport">
+          <!-- المسار القابل للتمرير -->
+          <div class="cats-carousel-track" id="cats-carousel-track">
+            <!-- تُبنى التصنيفات هنا ديناميكياً -->
+            <!-- Skeleton placeholders -->
+            <div class="cat-slide cat-slide-skeleton"></div>
+            <div class="cat-slide cat-slide-skeleton"></div>
+            <div class="cat-slide cat-slide-skeleton"></div>
           </div>
-        </article>
+        </div>
 
-        <!-- شنط -->
-        <article class="category-card animate-on-scroll animate-delay-1" role="button" tabindex="0" aria-label="تصفح الشنط" id="cat-bags">
-          <picture>
-            <source srcset="assets/images/cat-bags.avif" type="image/avif">
-            <source srcset="assets/images/cat-bags.webp" type="image/webp">
-            <img
-              src="assets/images/cat-bags.png"
-              alt="تصنيف الشنط"
-              width="600" height="600"
-              loading="lazy"
-              decoding="async"
-            >
-          </picture>
-          <div class="category-overlay"></div>
-          <div class="category-content">
-            <h3 class="category-name">الشنط</h3>
-            <p class="category-count">+85 قطعة</p>
-            <span class="category-arrow">
-              تسوقي الآن
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m15 18-6-6 6-6"/></svg>
-            </span>
-          </div>
-        </article>
-
-        <!-- إكسسوارات -->
-        <article class="category-card animate-on-scroll animate-delay-2" role="button" tabindex="0" aria-label="تصفح الإكسسوارات" id="cat-accessories">
-          <picture>
-            <source srcset="assets/images/cat-accessories.avif" type="image/avif">
-            <source srcset="assets/images/cat-accessories.webp" type="image/webp">
-            <img
-              src="assets/images/cat-accessories.png"
-              alt="تصنيف الإكسسوارات"
-              width="600" height="600"
-              loading="lazy"
-              decoding="async"
-            >
-          </picture>
-          <div class="category-overlay"></div>
-          <div class="category-content">
-            <h3 class="category-name">الإكسسوارات</h3>
-            <p class="category-count">+200 قطعة</p>
-            <span class="category-arrow">
-              تسوقي الآن
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m15 18-6-6 6-6"/></svg>
-            </span>
-          </div>
-        </article>
-
+        <!-- زر التالي -->
+        <button class="cats-nav-btn cats-next" id="cats-next-btn" aria-label="التالي">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="m15 18-6-6 6-6"/></svg>
+        </button>
       </div>
+
+      <!-- نقاط التنقل -->
+      <div class="cats-dots" id="cats-dots"></div>
+
     </div>
   </section>
 
@@ -398,42 +351,9 @@
       heroDesc.textContent = (s.heroDesc && s.heroDesc.trim()) ? s.heroDesc : defaultDesc;
     }
 
-    // تحديث التصنيفات من قاعدة البيانات
+    // ── بناء كاروسيل التصنيفات ──
     const realCats = NasmaDB.CategoriesDB.getAll();
-    if (realCats.length > 0) {
-      const catsGrid = document.querySelector('.categories-grid');
-      if (catsGrid) {
-        catsGrid.innerHTML = realCats.slice(0, 3).map((c, i) => {
-          const count = NasmaDB.ProductsDB.getAll().filter(p => p.categoryId === c.id).length;
-          const imgMap = {
-            'abaya':       'assets/images/cat-abaya.png',
-            'bags':        'assets/images/cat-bags.png',
-            'accessories': 'assets/images/cat-accessories.png'
-          };
-          const imgSrc = imgMap[c.id] || 'assets/images/hero.png';
-          return `
-            <article
-              class="category-card animate-on-scroll animate-delay-${i}"
-              role="button" tabindex="0"
-              aria-label="تصفح ${c.name}"
-              onclick="location.href='products.html?cat=${c.id}'"
-            >
-              <img src="${imgSrc}" alt="تصنيف ${c.name}" loading="lazy">
-              <div class="category-overlay"></div>
-              <div class="category-content">
-                <h3 class="category-name">${c.name}</h3>
-                <p class="category-count">${count} قطعة</p>
-                <span class="category-arrow">
-                  تسوقي الآن
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <path d="m15 18-6-6 6-6"/>
-                  </svg>
-                </span>
-              </div>
-            </article>`;
-        }).join('');
-      }
-    }
+    buildCatsCarousel(realCats);
 
     // تحديث شبكة المنتجات بأحدث المنتجات من المخزون
     const realProducts = NasmaDB.ProductsDB.getAll();
@@ -462,6 +382,260 @@
 
     // تنشيط الأنيميشن عند التمرير
     NasmaStore.initScrollAnimations();
+  }
+
+  /* ===========================================
+     بناء كاروسيل التصنيفات
+     =========================================== */
+  // خلفيات تدرجية افتراضية لكل بطاقة بدون صورة
+  const CAT_FALLBACK_GRADIENTS = [
+    'linear-gradient(145deg, #C4A882 0%, #8B6B45 100%)',
+    'linear-gradient(145deg, #E8D5B0 0%, #C4A882 100%)',
+    'linear-gradient(145deg, #B8956F 0%, #7A5535 100%)',
+    'linear-gradient(145deg, #D9C4A8 0%, #A0784F 100%)',
+    'linear-gradient(145deg, #C9A96E 0%, #8B6540 100%)',
+    'linear-gradient(145deg, #E0CAA4 0%, #B8915A 100%)',
+  ];
+
+  function buildCatsCarousel(cats) {
+    const track = document.getElementById('cats-carousel-track');
+    const dotsEl = document.getElementById('cats-dots');
+    if (!track) return;
+
+    if (!cats || cats.length === 0) {
+      track.innerHTML = `<div class="cat-slide-empty"><span>لا توجد تصنيفات بعد — أضيفيها من لوحة التحكم</span></div>`;
+      if (dotsEl) dotsEl.innerHTML = '';
+      return;
+    }
+
+    const allProducts = NasmaDB.ProductsDB.getAll();
+
+    // بناء الشرائح
+    track.innerHTML = cats.map((c, i) => {
+      const count = allProducts.filter(p => p.categoryId === c.id).length;
+      
+      // تحديد الصورة بناءً على الاسم أو المعرف إذا لم يتم رفع صورة غلاف
+      let imgSrc = c.coverImage;
+      if (!imgSrc) {
+        const nameLower = (c.name || '').toLowerCase();
+        const idLower = (c.id || '').toLowerCase();
+        if (idLower.includes('abaya') || nameLower.includes('عبا')) {
+          imgSrc = 'assets/images/cat-abaya.png';
+        } else if (idLower.includes('bag') || nameLower.includes('شنط') || nameLower.includes('حقائب')) {
+          imgSrc = 'assets/images/cat-bags.png';
+        } else if (idLower.includes('accessories') || nameLower.includes('اكسسوار') || nameLower.includes('إكسسوار')) {
+          imgSrc = 'assets/images/cat-accessories.png';
+        } else {
+          imgSrc = 'assets/images/hero.png'; // صورة افتراضية عامة
+        }
+      }
+
+      const imgTag = `<img
+          src="${imgSrc}"
+          alt="تصنيف ${c.name}"
+          loading="lazy"
+          decoding="async"
+          class="cat-slide-img"
+        >`;
+
+      return `
+        <article
+          class="cat-slide"
+          role="button"
+          tabindex="0"
+          aria-label="تصفح ${c.name}"
+          onclick="location.href='products.html?cat=${c.id}'"
+          onkeydown="if(event.key==='Enter'||event.key===' ') location.href='products.html?cat=${c.id}'"
+          data-index="${i}"
+        >
+          <div class="cat-slide-tag" title="${c.name}">${c.icon || '✦'}</div>
+          <div class="cat-slide-bg">${imgTag}</div>
+          <div class="cat-slide-overlay"></div>
+          <div class="cat-slide-content">
+            <span class="cat-slide-subtitle">تشكيلة حصرية</span>
+            <h3 class="cat-slide-name">${c.name}</h3>
+            <p class="cat-slide-count">${count > 0 ? count + ' قطعة متوفرة' : 'تصفح المجموعة'}</p>
+            <span class="cat-slide-cta">
+              تسوقي الآن
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="14" height="14"><path d="m15 18-6-6 6-6"/></svg>
+            </span>
+          </div>
+        </article>`;
+    }).join('');
+
+    // تهيئة السلايدر
+    initCatsCarousel();
+  }
+
+  function initCatsCarousel() {
+    let track    = document.getElementById('cats-carousel-track');
+    let prevBtn  = document.getElementById('cats-prev-btn');
+    let nextBtn  = document.getElementById('cats-next-btn');
+    const dotsEl   = document.getElementById('cats-dots');
+    if (!track) return;
+
+    // التحقق من اتجاه الصفحة (RTL) لتحديد اتجاه الإزاحة الصحيح
+    const isRTL = document.documentElement.dir === 'rtl' || getComputedStyle(track).direction === 'rtl';
+
+    // تنظيف مستمعي الأحداث القدامى عند إعادة البناء لمنع التكرار وتداخل الأحداث
+    const cleanTrack = track.cloneNode(true);
+    track.parentNode.replaceChild(cleanTrack, track);
+    track = cleanTrack;
+
+    if (prevBtn) {
+      const cleanPrev = prevBtn.cloneNode(true);
+      prevBtn.parentNode.replaceChild(cleanPrev, prevBtn);
+      prevBtn = cleanPrev;
+    }
+    if (nextBtn) {
+      const cleanNext = nextBtn.cloneNode(true);
+      nextBtn.parentNode.replaceChild(cleanNext, nextBtn);
+      nextBtn = cleanNext;
+    }
+
+    function getSlideWidth() {
+      const slide = track.querySelector('.cat-slide');
+      if (!slide) return 280;
+      return slide.offsetWidth + parseInt(getComputedStyle(track).gap || 24);
+    }
+
+    function getVisibleSlides() {
+      const w = track.parentElement.offsetWidth;
+      if (w >= 1024) return 3;
+      if (w >= 640)  return 2;
+      return 1.2;
+    }
+
+    const slides = track.querySelectorAll('.cat-slide');
+    const total  = slides.length;
+    let currentIdx = 0;
+    let currentOffset = 0;
+
+    function updateDots(idx) {
+      if (!dotsEl) return;
+      dotsEl.querySelectorAll('.cats-dot').forEach((d, i) => {
+        d.classList.toggle('active', i === idx);
+      });
+    }
+
+    function buildDots() {
+      if (!dotsEl) return;
+      const slideW = getSlideWidth();
+      const viewportW = track.parentElement.offsetWidth;
+      const trackW = total * slideW - parseInt(getComputedStyle(track).gap || 24);
+      const maxOffset = Math.max(0, trackW - viewportW);
+      const dotsCount = Math.round(maxOffset / slideW) + 1;
+
+      if (dotsCount <= 1) {
+        dotsEl.style.display = 'none';
+        return;
+      }
+
+      dotsEl.style.display = 'flex';
+      dotsEl.innerHTML = Array.from({ length: dotsCount }).map((_, i) =>
+        `<button class="cats-dot${i === currentIdx ? ' active' : ''}" data-idx="${i}" aria-label="الشريحة ${i + 1}"></button>`
+      ).join('');
+
+      // ربط أحداث النقر للـ dots
+      dotsEl.querySelectorAll('.cats-dot').forEach(dot => {
+        dot.addEventListener('click', () => scrollTo(+dot.dataset.idx));
+      });
+    }
+
+    function scrollTo(idx) {
+      if (total === 0) return;
+      const slideW = getSlideWidth();
+      const viewportW = track.parentElement.offsetWidth;
+      const trackW = total * slideW - parseInt(getComputedStyle(track).gap || 24);
+      const maxOffset = Math.max(0, trackW - viewportW);
+
+      // عدم إظهار الأسهم على الشاشات الصغيرة (الأجهزة المحمولة والتابلت <= 768px)
+      const isMobileDevice = window.innerWidth <= 768;
+
+      // إذا كان إجمالي الشرائح يناسب الشاشة بالكامل، لا حاجة للتمرير
+      if (maxOffset <= 0) {
+        currentIdx = 0;
+        currentOffset = 0;
+        track.style.transform = 'translateX(0)';
+        if (prevBtn) prevBtn.style.display = 'none';
+        if (nextBtn) nextBtn.style.display = 'none';
+        if (dotsEl) dotsEl.style.display = 'none';
+        return;
+      }
+
+      if (prevBtn) prevBtn.style.display = isMobileDevice ? 'none' : 'flex';
+      if (nextBtn) nextBtn.style.display = isMobileDevice ? 'none' : 'flex';
+      
+      currentIdx = Math.max(0, Math.min(idx, total - 1));
+      
+      let targetOffset = currentIdx * slideW;
+      if (targetOffset > maxOffset) {
+        targetOffset = maxOffset;
+        currentIdx = Math.round(targetOffset / slideW);
+      }
+
+      currentOffset = targetOffset;
+      // في اتجاه RTL تكون الإزاحة موجبة لتحريك العناصر لليمين وإظهار العناصر الفائضة من اليسار
+      const transformValue = isRTL ? currentOffset : -currentOffset;
+      track.style.transform = `translateX(${transformValue}px)`;
+      
+      updateDots(currentIdx);
+
+      // تعطيل/تفعيل الأزرار وتعتيمها عند البداية أو النهاية
+      if (prevBtn) {
+        prevBtn.style.opacity = currentIdx === 0 ? '0.35' : '1';
+        prevBtn.style.pointerEvents = currentIdx === 0 ? 'none' : 'auto';
+      }
+      if (nextBtn) {
+        nextBtn.style.opacity = currentOffset >= maxOffset ? '0.35' : '1';
+        nextBtn.style.pointerEvents = currentOffset >= maxOffset ? 'none' : 'auto';
+      }
+    }
+
+    // أزرار التنقل
+    if (prevBtn) {
+      prevBtn.addEventListener('click', () => scrollTo(currentIdx - 1));
+    }
+    if (nextBtn) {
+      nextBtn.addEventListener('click', () => scrollTo(currentIdx + 1));
+    }
+
+    // Touch / Drag للجوال
+    let startX = 0;
+    let isDragging = false;
+    track.addEventListener('touchstart', e => {
+      startX = e.touches[0].clientX;
+      isDragging = true;
+    }, { passive: true });
+    track.addEventListener('touchend', e => {
+      if (!isDragging) return;
+      isDragging = false;
+      const diff = startX - e.changedTouches[0].clientX;
+      if (Math.abs(diff) > 50) {
+        // في RTL، سحب لليسار يعني العودة للخلف (سالب) وسحب لليمين يعني التقدم (موجب)
+        const step = diff > 0 ? 1 : -1;
+        scrollTo(currentIdx + (isRTL ? -step : step));
+      }
+    }, { passive: true });
+
+    // Mouse drag لسطح المكتب
+    let mouseStartX = 0;
+    let mouseDragging = false;
+    track.addEventListener('mousedown', e => { mouseStartX = e.clientX; mouseDragging = true; track.style.cursor = 'grabbing'; });
+    track.addEventListener('mouseup', e => {
+      if (!mouseDragging) return;
+      mouseDragging = false; track.style.cursor = 'grab';
+      const diff = mouseStartX - e.clientX;
+      if (Math.abs(diff) > 40) {
+        const step = diff > 0 ? 1 : -1;
+        scrollTo(currentIdx + (isRTL ? -step : step));
+      }
+    });
+    track.addEventListener('mouseleave', () => { mouseDragging = false; track.style.cursor = 'grab'; });
+
+    // بناء نقاط التنقل وتفعيل أول شريحة
+    buildDots();
+    scrollTo(0);
   }
 
   document.addEventListener('DOMContentLoaded', () => {

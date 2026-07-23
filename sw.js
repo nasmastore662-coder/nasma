@@ -4,8 +4,8 @@
  * استراتيجية Network First للصفحات HTML
  */
 
-const CACHE_NAME    = 'nasma-v3';
-const ASSETS_CACHE  = 'nasma-assets-v3';
+const CACHE_NAME    = 'nasma-v9';
+const ASSETS_CACHE  = 'nasma-assets-v9';
 
 /* الأصول التي تُخزَّن عند التثبيت */
 const PRECACHE_URLS = [

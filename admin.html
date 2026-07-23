@@ -1028,6 +1028,7 @@
                   <tr>
                     <th>أيقونة</th>
                     <th>اسم التصنيف</th>
+                    <th>صورة الغلاف</th>
                     <th>Slug</th>
                     <th>تاريخ الإنشاء</th>
                     <th>الإجراءات</th>
@@ -1856,6 +1857,25 @@
               </div>
             </div>
           </div>
+          <!-- حقل صورة الغلاف -->
+          <div class="checkout-input-group">
+            <label class="checkout-label" for="cat-cover-upload">صورة الغلاف (Category Cover Image)</label>
+            <div style="display:flex; flex-direction:column; gap:10px;">
+              <!-- معاينة الصورة -->
+              <div id="cat-cover-preview-wrapper" style="display:none; position:relative; width:100%; height:180px; border-radius:12px; overflow:hidden; background:#f5f3f0;">
+                <img id="cat-cover-preview-img" src="" alt="معاينة صورة التصنيف" style="width:100%; height:100%; object-fit:cover;">
+                <button type="button" onclick="clearCatCover()" style="position:absolute; top:8px; left:8px; background:rgba(0,0,0,0.55); color:#fff; border:none; border-radius:50%; width:28px; height:28px; cursor:pointer; font-size:14px; display:flex; align-items:center; justify-content:center;">✕</button>
+              </div>
+              <!-- منطقة الرفع -->
+              <div id="cat-cover-drop-zone" onclick="document.getElementById('cat-cover-upload').click()" style="border:2px dashed #D9C4A8; border-radius:12px; padding:24px 16px; text-align:center; cursor:pointer; transition:border-color 0.2s, background 0.2s; background:#faf8f5;" onmouseenter="this.style.borderColor='#C4A882'; this.style.background='#f4f0eb'" onmouseleave="this.style.borderColor='#D9C4A8'; this.style.background='#faf8f5'">
+                <div style="font-size:32px; margin-bottom:8px;">🖼️</div>
+                <p style="font-size:13px; color:#5A5A5A; margin:0;">انقري لرفع صورة الغلاف</p>
+                <p style="font-size:11px; color:#9A9A9A; margin:4px 0 0;">PNG / JPG / WebP — حجم موصى به: 600×800</p>
+              </div>
+              <input type="file" id="cat-cover-upload" accept="image/*" style="display:none" onchange="handleCatCoverUpload(event)">
+              <input type="hidden" id="cat-cover-image-data">
+            </div>
+          </div>
         </div>
         <div class="modal-footer">
           <button type="button" class="btn btn-secondary" onclick="closeCategoryModal()">إلغاء</button>
@@ -1913,14 +1933,47 @@
               <input type="number" id="prod-price-old-input" class="checkout-input" min="0">
             </div>
 
-            <div class="checkout-input-group">
-              <label class="checkout-label" for="prod-badge-select">شارة المنتج</label>
-              <select id="prod-badge-select" class="checkout-input" style="height:44px;">
+            <div class="checkout-input-group" style="grid-column: span 2;">
+              <label class="checkout-label" for="prod-badge-select">شارة المنتج (Badge)</label>
+              <select id="prod-badge-select" class="checkout-input" style="height:44px;" onchange="handleProductBadgeChange()">
                 <option value="">بدون شارة</option>
-                <option value="new">جديد (New)</option>
-                <option value="sale">تخفيض (Sale)</option>
-                <option value="sold_out">نفد المخزون</option>
+                <option value="new">✨ جديد (New)</option>
+                <option value="sale">🔥 تخفيض (Sale)</option>
+                <option value="best_seller">⭐ الأكثر مبيعاً (Best Seller)</option>
+                <option value="exclusive">👑 حصري (Exclusive)</option>
+                <option value="limited">⏳ إصدار محدود (Limited Edition)</option>
+                <option value="free_shipping">🚚 شحن مجاني (Free Shipping)</option>
+                <option value="trending">💥 ترند (Trending)</option>
+                <option value="sold_out">❌ نفدت الكمية (Sold Out)</option>
+                <option value="custom">✏️ نص مخصص... (Custom)</option>
               </select>
+            </div>
+
+            <!-- إعدادات الشارة المخصصة واللون -->
+            <div id="custom-badge-fields-wrapper" style="grid-column: span 2; display:none; padding:14px; background:#f8fafc; border-radius:12px; border:1px solid #e2e8f0; margin-bottom:12px;">
+              <div style="display:grid; grid-template-columns: 1fr 1fr; gap:12px; align-items:center;">
+                <div>
+                  <label class="checkout-label" for="prod-badge-text-input" style="font-size:12px;">نص الشارة</label>
+                  <input type="text" id="prod-badge-text-input" class="checkout-input" placeholder="مثال: خصم 30% أو VIP" style="height:42px;" oninput="updateBadgePreview()">
+                </div>
+                <div>
+                  <label class="checkout-label" for="prod-badge-color-input" style="font-size:12px;">لون الشارة</label>
+                  <div style="display:flex; align-items:center; gap:10px;">
+                    <input type="color" id="prod-badge-color-input" value="#C4A882" style="width:42px; height:42px; padding:2px; border-radius:8px; border:1px solid #cbd5e1; cursor:pointer;" onchange="updateBadgePreview()">
+                    <span id="badge-color-preview-pill" style="font-size:12px; font-weight:700; padding:5px 12px; border-radius:99px; background:#C4A882; color:#ffffff; box-shadow:0 2px 6px rgba(0,0,0,0.15);">معاينة</span>
+                  </div>
+                </div>
+              </div>
+              <div style="margin-top:10px; display:flex; align-items:center; gap:6px;">
+                <span style="font-size:11px; color:#64748b; font-weight:600;">ألوان سريعة:</span>
+                <span onclick="setProductBadgeColor('#C4A882')" title="ذهبي" style="width:24px; height:24px; border-radius:50%; background:#C4A882; cursor:pointer; border:2px solid #fff; box-shadow:0 1px 4px rgba(0,0,0,0.2);"></span>
+                <span onclick="setProductBadgeColor('#EF4444')" title="أحمر" style="width:24px; height:24px; border-radius:50%; background:#EF4444; cursor:pointer; border:2px solid #fff; box-shadow:0 1px 4px rgba(0,0,0,0.2);"></span>
+                <span onclick="setProductBadgeColor('#10B981')" title="أخضر" style="width:24px; height:24px; border-radius:50%; background:#10B981; cursor:pointer; border:2px solid #fff; box-shadow:0 1px 4px rgba(0,0,0,0.2);"></span>
+                <span onclick="setProductBadgeColor('#8B5CF6')" title="بنفسجي" style="width:24px; height:24px; border-radius:50%; background:#8B5CF6; cursor:pointer; border:2px solid #fff; box-shadow:0 1px 4px rgba(0,0,0,0.2);"></span>
+                <span onclick="setProductBadgeColor('#EC4899')" title="وردي" style="width:24px; height:24px; border-radius:50%; background:#EC4899; cursor:pointer; border:2px solid #fff; box-shadow:0 1px 4px rgba(0,0,0,0.2);"></span>
+                <span onclick="setProductBadgeColor('#F59E0B')" title="برتقالي" style="width:24px; height:24px; border-radius:50%; background:#F59E0B; cursor:pointer; border:2px solid #fff; box-shadow:0 1px 4px rgba(0,0,0,0.2);"></span>
+                <span onclick="setProductBadgeColor('#1E293B')" title="أسود/داكن" style="width:24px; height:24px; border-radius:50%; background:#1E293B; cursor:pointer; border:2px solid #fff; box-shadow:0 1px 4px rgba(0,0,0,0.2);"></span>
+              </div>
             </div>
 
             <div class="checkout-input-group">

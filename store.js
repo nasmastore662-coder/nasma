@@ -268,9 +268,12 @@ function buildProductCard(product, index = 0) {
   const delay = index % 4;
 
   let badgeHTML = '';
-  if (product.badge === 'new')      badgeHTML = `<span class="product-badge new">جديد</span>`;
-  if (product.badge === 'sale')     badgeHTML = `<span class="product-badge sale">خصم</span>`;
-  if (product.badge === 'sold_out') badgeHTML = `<span class="product-badge" style="background:#9CA3AF;color:#fff;">نفدت</span>`;
+  const badgeInfo = (NasmaDB && NasmaDB.getProductBadgeInfo) ? NasmaDB.getProductBadgeInfo(product) : { type: product.badge, text: product.badge || '', color: '' };
+  if (badgeInfo.text) {
+    const badgeClass = badgeInfo.type === 'new' ? 'product-badge new' : (badgeInfo.type === 'sale' ? 'product-badge sale' : 'product-badge');
+    const colorStyle = badgeInfo.color ? `background:${badgeInfo.color}; color:#ffffff; font-weight:700;` : '';
+    badgeHTML = `<span class="${badgeClass}" style="${colorStyle}">${badgeInfo.text}</span>`;
+  }
 
   let imgHTML = '';
   if (product.images && product.images[0]) {

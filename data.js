@@ -84,6 +84,81 @@ const DB = {
 };
 
 /* ===========================================
+   مُحولات التصنيفات لتوافق Supabase بدون العمود المفقود
+   =========================================== */
+function categoryToDb(cat) {
+  // دمج الإيموجي وصورة الغلاف في حقل الأيقونة text لتجنب نقص عمود cover_image في Supabase
+  const iconCombined = (cat.icon || '🛍️') + '|||' + (cat.coverImage || '');
+  return {
+    id: cat.id,
+    name: cat.name,
+    slug: cat.slug,
+    icon: iconCombined,
+    order: cat.order,
+    created_at: cat.createdAt,
+  };
+}
+
+function categoryFromDb(dbCat) {
+  const parts = (dbCat.icon || '').split('|||');
+  const icon = parts[0] || '🛍️';
+  const coverImage = parts[1] || '';
+  return {
+    id: dbCat.id,
+    name: dbCat.name,
+    slug: dbCat.slug,
+    icon: icon,
+    coverImage: coverImage,
+    order: dbCat.order,
+    createdAt: dbCat.created_at || dbCat.createdAt,
+  };
+}
+
+/* ===========================================
+   مُحولات المنتجات لتوافق Supabase والشارات المخصصة
+   =========================================== */
+function productToDb(p) {
+  let badgeCombined = p.badge || '';
+  if (p.badgeText || p.badgeColor) {
+    let rawType = p.badge || '';
+    if (rawType.includes('|||')) {
+      rawType = rawType.split('|||')[0] || '';
+    }
+    badgeCombined = rawType ? (rawType + '|||' + (p.badgeText || '') + '|||' + (p.badgeColor || '')) : '';
+  }
+
+  return {
+    id:           p.id,
+    name:         p.name || '',
+    description:  p.description || '',
+    price:        parseFloat(p.price) || 0,
+    price_old:    parseFloat(p.priceOld) || 0,
+    category_id:  p.categoryId || '',
+    images:       p.images || [],
+    badge:        badgeCombined,
+    stock:        parseInt(p.stock) || 0,
+    sizes:        p.sizes || [],
+    colors:       p.colors || [],
+    rating:       parseFloat(p.rating) || 5,
+    review_count: parseInt(p.reviewCount) || 0,
+    featured:     !!p.featured,
+    active:       p.active !== false,
+    sku:          p.sku || '',
+    sold_count:   parseInt(p.soldCount) || 0,
+    created_at:   p.createdAt || new Date().toISOString(),
+    updated_at:   p.updatedAt || new Date().toISOString(),
+  };
+}
+
+function productFromDb(dbProduct) {
+  const p = toCamelCase(dbProduct);
+  const badgeInfo = getProductBadgeInfo(p);
+  p.badgeText = badgeInfo.text;
+  p.badgeColor = badgeInfo.color;
+  return p;
+}
+
+/* ===========================================
    التصنيفات
    =========================================== */
 const CategoriesDB = {
@@ -93,7 +168,7 @@ const CategoriesDB = {
   save(categories) {
     const success = DB.set(DB_KEYS.CATEGORIES, categories);
     if (success && window.supabaseClient) {
-      window.supabaseClient.from('categories').upsert(categories.map(toSnakeCase)).then(({ error }) => {
+      window.supabaseClient.from('categories').upsert(categories.map(categoryToDb)).then(({ error }) => {
         if (error) console.error('❌ Supabase error categories upsert:', error);
       });
     }
@@ -102,12 +177,13 @@ const CategoriesDB = {
   add(category) {
     const list = this.getAll();
     const newCat = {
-      id:    Date.now().toString(),
-      name:  category.name || '',
-      slug:  slugify(category.name || ''),
-      icon:  category.icon || '🛍️',
-      order: list.length,
-      createdAt: new Date().toISOString(),
+      id:         Date.now().toString(),
+      name:       category.name || '',
+      slug:       slugify(category.name || ''),
+      icon:       category.icon || '🛍️',
+      coverImage: category.coverImage || '',   // صورة الغلاف للكاروسيل
+      order:      list.length,
+      createdAt:  new Date().toISOString(),
     };
     list.push(newCat);
     this.save(list);
@@ -145,7 +221,7 @@ const ProductsDB = {
   save(products) {
     const success = DB.set(DB_KEYS.PRODUCTS, products);
     if (success && window.supabaseClient) {
-      window.supabaseClient.from('products').upsert(products.map(toSnakeCase)).then(({ error }) => {
+      window.supabaseClient.from('products').upsert(products.map(productToDb)).then(({ error }) => {
         if (error) console.error('❌ Supabase error products upsert:', error);
       });
     }
@@ -1015,6 +1091,56 @@ function generateOrderId() {
 }
 
 /* ===========================================
+   استخراج وتنسيق بيانات شارة المنتج (النص واللون)
+   =========================================== */
+function getProductBadgeInfo(product) {
+  if (!product) return { type: '', text: '', color: '' };
+  
+  let rawBadge = product.badge || '';
+  let badgeText = product.badgeText || '';
+  let badgeColor = product.badgeColor || '';
+
+  if (rawBadge && rawBadge.includes('|||')) {
+    const parts = rawBadge.split('|||');
+    rawBadge = parts[0] || '';
+    if (!badgeText) badgeText = parts[1] || '';
+    if (!badgeColor) badgeColor = parts[2] || '';
+  }
+
+  const defaultTexts = {
+    new: 'جديد',
+    sale: 'تخفيض',
+    best_seller: 'الأكثر مبيعاً',
+    exclusive: 'حصري',
+    limited: 'إصدار محدود',
+    free_shipping: 'شحن مجاني',
+    trending: 'ترند 🔥',
+    sold_out: 'نفدت الكمية',
+  };
+
+  const defaultColors = {
+    new: 'var(--color-primary, #C4A882)',
+    sale: '#EF4444',
+    best_seller: '#F59E0B',
+    exclusive: '#8B5CF6',
+    limited: '#EC4899',
+    free_shipping: '#10B981',
+    trending: '#0EA5E9',
+    sold_out: '#9CA3AF',
+  };
+
+  const finalType = rawBadge;
+  const finalText = badgeText || defaultTexts[finalType] || (finalType === 'custom' ? 'مميز' : (finalType.includes('|||') ? '' : finalType));
+  const finalColor = badgeColor || defaultColors[finalType] || 'var(--color-primary, #C4A882)';
+
+  return {
+    type: finalType,
+    text: finalText,
+    color: finalColor
+  };
+}
+
+/* ===========================================
    تحديث شارة السلة في الهيدر
    =========================================== */
 function updateCartBadge() {
@@ -1205,22 +1331,22 @@ async function syncWithSupabase() {
 
       if (key === 'categories' && data) {
         if (data.length > 0) {
-          localStorage.setItem(DB_KEYS.CATEGORIES, JSON.stringify(data.map(toCamelCase)));
+          localStorage.setItem(DB_KEYS.CATEGORIES, JSON.stringify(data.map(categoryFromDb)));
         } else {
           const localCats = CategoriesDB.getAll();
           if (localCats.length > 0) {
-            await window.supabaseClient.from('categories').insert(localCats.map(toSnakeCase));
+            await window.supabaseClient.from('categories').insert(localCats.map(categoryToDb));
           }
         }
       }
 
       if (key === 'products' && data) {
         if (data.length > 0) {
-          localStorage.setItem(DB_KEYS.PRODUCTS, JSON.stringify(data.map(toCamelCase)));
+          localStorage.setItem(DB_KEYS.PRODUCTS, JSON.stringify(data.map(productFromDb)));
         } else {
           const localProds = ProductsDB.getAll();
           if (localProds.length > 0) {
-            await window.supabaseClient.from('products').insert(localProds.map(toSnakeCase));
+            await window.supabaseClient.from('products').insert(localProds.map(productToDb));
           }
         }
       }
@@ -1368,4 +1494,5 @@ window.NasmaDB = {
   starsHTML,
   updateCartBadge,
   syncWithSupabase,
+  getProductBadgeInfo,
 };

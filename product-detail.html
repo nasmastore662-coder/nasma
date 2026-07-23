@@ -145,12 +145,13 @@
     }
 
     .discount-badge {
-      background: #FEE2E2;
-      color: #EF4444;
+      background: var(--color-primary, #C4A882);
+      color: #ffffff !important;
       font-size: var(--text-sm);
       font-weight: 700;
-      padding: var(--space-1) var(--space-3);
+      padding: 4px 14px;
       border-radius: var(--radius-full);
+      box-shadow: 0 2px 8px rgba(0,0,0,0.12);
     }
 
     /* خيارات */
@@ -661,15 +662,24 @@ function renderProduct(p) {
   document.getElementById('detail-stars').textContent = NasmaDB.starsHTML(p.rating);
   document.getElementById('detail-review-count').textContent = `(${p.reviewCount} تقييم)`;
 
-  // السعر
+  // السعر والشارات
   document.getElementById('detail-price').textContent = NasmaDB.formatPrice(p.price);
+  const badgeInfo = NasmaDB.getProductBadgeInfo ? NasmaDB.getProductBadgeInfo(p) : null;
+  const badge = document.getElementById('detail-discount-badge');
+
   if (p.priceOld > p.price) {
     const old = document.getElementById('detail-price-old');
-    const badge = document.getElementById('detail-discount-badge');
     old.textContent = NasmaDB.formatPrice(p.priceOld);
     old.style.display = '';
     const pct = Math.round((p.priceOld - p.price) / p.priceOld * 100);
-    badge.textContent = `خصم ${pct}%`;
+    badge.textContent = (badgeInfo && badgeInfo.text) ? badgeInfo.text : `خصم ${pct}%`;
+    if (badgeInfo && badgeInfo.color) badge.style.background = badgeInfo.color;
+    badge.style.color = '#ffffff';
+    badge.style.display = '';
+  } else if (badgeInfo && badgeInfo.text) {
+    badge.textContent = badgeInfo.text;
+    if (badgeInfo.color) badge.style.background = badgeInfo.color;
+    badge.style.color = '#ffffff';
     badge.style.display = '';
   }
 
